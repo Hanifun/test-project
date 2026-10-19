@@ -1,163 +1,86 @@
 // =====================================================
-// SafeReport — Data Store (Penyimpanan Data)
-//
-// Cara kerja "Dual Engine":
-// 1. Kalau .env.local sudah diisi URL Supabase → data disimpan ke cloud
-// 2. Kalau belum diisi → data disimpan di localStorage browser (buat demo/belajar)
-//
-// Ini artinya proyek bisa langsung dicoba TANPA setup database dulu!
+// SafeReport — Data Store & Management Service
+// Real Project: Clean Slate, Admin & Student Account Management
 // =====================================================
 
-import { Laporan, FormLaporanData, StatusLaporan, TindakLanjut, BuktiFile, Profile } from "@/types";
+import {
+  Laporan,
+  FormLaporanData,
+  StatusLaporan,
+  TindakLanjut,
+  BuktiFile,
+  Profile,
+  StudentAccount,
+  AdminAccount,
+} from "@/types";
 import { generateKodePelacak } from "./utils";
 
-// ---- KEY untuk localStorage ----
-const STORAGE_KEY = "safereport_laporan";
+// Storage Keys
+const LAPORAN_STORAGE_KEY = "safereport_real_laporan";
+const STUDENTS_STORAGE_KEY = "safereport_real_students";
+const ADMINS_STORAGE_KEY = "safereport_real_admins";
+const SESSION_KEY = "safereport_real_user";
 
-// ---- Data demo bawaan (agar tidak kosong saat pertama dibuka) ----
-const DEMO_DATA: Laporan[] = [
-  {
-    id: "demo-1",
-    kode_pelacak: "SF-7K2X",
-    is_anonim: true,
-    pelapor_id: null,
-    nama_pelapor: null,
-    kontak_opsional: null,
-    peran_pelapor: "korban",
-    kategori: "verbal",
-    nama_pelaku: "Siswa kelas XII (inisial R.A.)",
-    lokasi: "Area Kantin",
-    tanggal_kejadian: "2026-10-15",
-    deskripsi:
-      "Sering dipanggil dengan ejekan nama dan kata-kata kasar setiap jam istirahat di dekat kantin.",
-    status: "diproses",
-    tindak_lanjut: [
-      {
-        id: "tl-1",
-        laporan_id: "demo-1",
-        pesan:
-          "Terima kasih sudah berani melapor. Laporan ini sudah kami verifikasi dan sedang dijadwalkan mediasi tertutup. Tetap semangat ya!",
-        oleh_nama: "Ibu Ratna, S.Pd (Guru BK)",
-        is_publik: true,
-        created_at: "2026-10-16T11:00:00Z",
-      },
-    ],
-    created_at: "2026-10-15T09:00:00Z",
-    updated_at: "2026-10-16T11:00:00Z",
-  },
-  {
-    id: "demo-2",
-    kode_pelacak: "SF-9M3A",
-    is_anonim: false,
-    pelapor_id: "siswa-demo",
-    nama_pelapor: "Budi Santoso (XI IPA 2)",
-    kontak_opsional: null,
-    peran_pelapor: "saksi",
-    kategori: "cyber",
-    nama_pelaku: "Akun anonim Instagram angkatan",
-    lokasi: "Grup Chat & Instagram",
-    tanggal_kejadian: "2026-10-17",
-    deskripsi:
-      "Ada foto teman sekelas yang diedit buruk dan disebarkan di grup angkatan. Korban terlihat sangat tertekan.",
-    status: "diverifikasi",
-    tindak_lanjut: [
-      {
-        id: "tl-2",
-        laporan_id: "demo-2",
-        pesan:
-          "Laporan sudah diterima. Pihak kesiswaan sedang berkoordinasi dengan wali kelas untuk menangani kasus cyberbullying ini.",
-        oleh_nama: "Pak Hendra (Kesiswaan)",
-        is_publik: true,
-        created_at: "2026-10-18T08:00:00Z",
-      },
-    ],
-    created_at: "2026-10-17T14:00:00Z",
-    updated_at: "2026-10-18T08:00:00Z",
-  },
-  {
-    id: "demo-3",
-    kode_pelacak: "SF-4P8Z",
-    is_anonim: true,
-    pelapor_id: null,
-    nama_pelapor: null,
-    kontak_opsional: "0812-xxxx-xxxx",
-    peran_pelapor: "saksi",
-    kategori: "fisik",
-    nama_pelaku: "Geng 3 siswa kelas X",
-    lokasi: "Belakang Musholla",
-    tanggal_kejadian: "2026-10-12",
-    deskripsi:
-      "Melihat 3 siswa mendorong-dorong dan memaksa adik kelas X untuk menyerahkan uang jajannya.",
-    status: "selesai",
-    tindak_lanjut: [
-      {
-        id: "tl-3",
-        laporan_id: "demo-3",
-        pesan:
-          "Pelaku telah dipanggil bersama orang tua masing-masing, menerima sanksi pendidikan, dan diwajibkan mengikuti bimbingan perilaku. Kasus dinyatakan selesai.",
-        oleh_nama: "Ibu Ratna, S.Pd (Guru BK)",
-        is_publik: true,
-        created_at: "2026-10-14T15:00:00Z",
-      },
-    ],
-    created_at: "2026-10-12T16:00:00Z",
-    updated_at: "2026-10-14T15:00:00Z",
-  },
-];
+// Default Initial Admin (agar pengguna pertama kali bisa langsung masuk)
+const DEFAULT_INITIAL_ADMIN: AdminAccount = {
+  id: "admin-utama",
+  nama: "Guru Bimbingan Konseling",
+  email: "admin@sekolah.id",
+  password: "admin",
+  nip_jabatan: "Koordinator Bimbingan Konseling",
+  created_at: new Date().toISOString(),
+};
 
-// ---- Baca semua laporan dari localStorage ----
-function readStorage(): Laporan[] {
-  if (typeof window === "undefined") return DEMO_DATA;
+// =====================================================
+// Helper Storage Functions
+// =====================================================
+
+function readStorage<T>(key: string, defaultValue: T): T {
+  if (typeof window === "undefined") return defaultValue;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      // Pertama kali: isi data demo
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_DATA));
-      return DEMO_DATA;
+      localStorage.setItem(key, JSON.stringify(defaultValue));
+      return defaultValue;
     }
-    return JSON.parse(raw) as Laporan[];
+    return JSON.parse(raw) as T;
   } catch {
-    return DEMO_DATA;
+    return defaultValue;
   }
 }
 
-// ---- Simpan semua laporan ke localStorage ----
-function writeStorage(data: Laporan[]): void {
+function writeStorage<T>(key: string, data: T): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (err) {
+    console.error("Gagal menyimpan ke localStorage:", err);
+  }
 }
 
 // =====================================================
-// SERVICE: LAPORAN
-// Kumpulan fungsi untuk CRUD data laporan
+// 1. SERVICE: LAPORAN (PENGADUAN)
 // =====================================================
 export const LaporanService = {
-  /** Ambil semua laporan (untuk dashboard admin) */
   getAll(): Laporan[] {
-    return readStorage();
+    return readStorage<Laporan[]>(LAPORAN_STORAGE_KEY, []);
   },
 
-  /** Cari laporan berdasarkan kode tiket (untuk halaman /status) */
   getByKode(kode: string): Laporan | null {
     const clean = kode.trim().toUpperCase();
-    const list = readStorage();
+    const list = this.getAll();
     return list.find((l) => l.kode_pelacak === clean) ?? null;
   },
 
-  /** Ambil laporan milik siswa tertentu (untuk dashboard siswa) */
   getByPelaporId(pelaporId: string): Laporan[] {
-    return readStorage().filter((l) => l.pelapor_id === pelaporId);
+    return this.getAll().filter((l) => l.pelapor_id === pelaporId);
   },
 
-  /** Kirim laporan baru */
-  async create(
-    data: FormLaporanData,
-    user: Profile | null
-  ): Promise<Laporan> {
+  async create(data: FormLaporanData, user: Profile | null): Promise<Laporan> {
     const isAnonim = !user;
     const kode = generateKodePelacak("SF");
 
-    // Proses file bukti → simpan sebagai data URL agar bisa ditampilkan offline
+    // Simpan file bukti (data URL)
     const buktiList: BuktiFile[] = [];
     if (data.bukti_files && data.bukti_files.length > 0) {
       for (const file of data.bukti_files) {
@@ -168,7 +91,7 @@ export const LaporanService = {
           reader.readAsDataURL(file);
         });
         buktiList.push({
-          id: `bukti-${Date.now()}-${Math.random()}`,
+          id: `bukti-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
           nama_file: file.name,
           url: dataUrl,
           tipe_file: file.type,
@@ -179,26 +102,25 @@ export const LaporanService = {
 
     const now = new Date().toISOString();
     const laporan: Laporan = {
-      id: `lap-${Date.now()}`,
+      id: `lap-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       kode_pelacak: kode,
       is_anonim: isAnonim,
       pelapor_id: user?.id ?? null,
       nama_pelapor: user ? `${user.nama} (${user.nisn_kelas ?? ""})` : null,
-      kontak_opsional: data.kontak_opsional ?? null,
+      kontak_opsional: data.kontak_opsional?.trim() || null,
       peran_pelapor: data.peran_pelapor,
       kategori: data.kategori,
-      nama_pelaku: data.nama_pelaku ?? null,
-      lokasi: data.lokasi,
+      nama_pelaku: data.nama_pelaku?.trim() || null,
+      lokasi: data.lokasi.trim(),
       tanggal_kejadian: data.tanggal_kejadian,
-      deskripsi: data.deskripsi,
+      deskripsi: data.deskripsi.trim(),
       bukti: buktiList,
       status: "baru",
       tindak_lanjut: [
         {
-          id: `tl-auto-${Date.now()}`,
-          laporan_id: `lap-${Date.now()}`,
-          pesan:
-            "Laporan berhasil masuk ke sistem. Tim Guru BK akan segera menindaklanjuti. Terima kasih sudah berani bersuara!",
+          id: `tl-${Date.now()}`,
+          laporan_id: "",
+          pesan: "Laporan telah diterima oleh sistem dan menunggu peninjauan tim Guru BK.",
           oleh_nama: "Sistem SafeReport",
           is_publik: true,
           created_at: now,
@@ -208,36 +130,32 @@ export const LaporanService = {
       updated_at: now,
     };
 
-    const list = readStorage();
-    writeStorage([laporan, ...list]);
+    laporan.tindak_lanjut![0].laporan_id = laporan.id;
+
+    const list = this.getAll();
+    writeStorage(LAPORAN_STORAGE_KEY, [laporan, ...list]);
     return laporan;
   },
 
-  /** Ubah status laporan (oleh admin) */
   updateStatus(id: string, status: StatusLaporan): boolean {
-    const list = readStorage();
+    const list = this.getAll();
     const idx = list.findIndex((l) => l.id === id);
     if (idx === -1) return false;
     list[idx].status = status;
     list[idx].updated_at = new Date().toISOString();
-    writeStorage(list);
+    writeStorage(LAPORAN_STORAGE_KEY, list);
     return true;
   },
 
-  /** Tambah balasan tindak lanjut dari Guru BK */
-  addTindakLanjut(
-    laporanId: string,
-    pesan: string,
-    adminNama: string
-  ): TindakLanjut | null {
-    const list = readStorage();
+  addTindakLanjut(laporanId: string, pesan: string, adminNama: string): TindakLanjut | null {
+    const list = this.getAll();
     const idx = list.findIndex((l) => l.id === laporanId);
     if (idx === -1) return null;
 
     const tl: TindakLanjut = {
       id: `tl-${Date.now()}`,
       laporan_id: laporanId,
-      pesan,
+      pesan: pesan.trim(),
       oleh_nama: adminNama,
       is_publik: true,
       created_at: new Date().toISOString(),
@@ -246,17 +164,98 @@ export const LaporanService = {
     if (!list[idx].tindak_lanjut) list[idx].tindak_lanjut = [];
     list[idx].tindak_lanjut!.push(tl);
     list[idx].updated_at = new Date().toISOString();
-    writeStorage(list);
+    writeStorage(LAPORAN_STORAGE_KEY, list);
     return tl;
+  },
+
+  delete(id: string): boolean {
+    const list = this.getAll();
+    const filtered = list.filter((l) => l.id !== id);
+    if (filtered.length === list.length) return false;
+    writeStorage(LAPORAN_STORAGE_KEY, filtered);
+    return true;
   },
 };
 
 // =====================================================
-// SERVICE: AUTH SESSION
-// Manajemen sesi login siswa & admin
+// 2. SERVICE: KELOLA AKUN ADMIN (GURU BK)
 // =====================================================
-const SESSION_KEY = "safereport_user";
+export const AdminService = {
+  getAll(): AdminAccount[] {
+    return readStorage<AdminAccount[]>(ADMINS_STORAGE_KEY, [DEFAULT_INITIAL_ADMIN]);
+  },
 
+  create(admin: Omit<AdminAccount, "id" | "created_at">): AdminAccount {
+    const list = this.getAll();
+    const newAdmin: AdminAccount = {
+      id: `admin-${Date.now()}`,
+      nama: admin.nama.trim(),
+      email: admin.email.trim().toLowerCase(),
+      password: admin.password || "admin",
+      nip_jabatan: admin.nip_jabatan?.trim() || "Staf Guru BK",
+      created_at: new Date().toISOString(),
+    };
+    writeStorage(ADMINS_STORAGE_KEY, [...list, newAdmin]);
+    return newAdmin;
+  },
+
+  login(email: string, password?: string): AdminAccount | null {
+    const list = this.getAll();
+    const cleanEmail = email.trim().toLowerCase();
+    const found = list.find((a) => a.email.toLowerCase() === cleanEmail);
+    if (!found) return null;
+    if (password && found.password && found.password !== password) {
+      return null;
+    }
+    return found;
+  },
+};
+
+// =====================================================
+// 3. SERVICE: KELOLA AKUN SISWA (DIBUAT OLEH ADMIN)
+// =====================================================
+export const StudentService = {
+  getAll(): StudentAccount[] {
+    return readStorage<StudentAccount[]>(STUDENTS_STORAGE_KEY, []);
+  },
+
+  create(data: { nisn: string; nama: string; kelas: string; password?: string }): StudentAccount {
+    const list = this.getAll();
+    const newStudent: StudentAccount = {
+      id: `siswa-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      nisn: data.nisn.trim(),
+      nama: data.nama.trim(),
+      kelas: data.kelas.trim(),
+      password: data.password?.trim() || "123456",
+      created_at: new Date().toISOString(),
+    };
+    writeStorage(STUDENTS_STORAGE_KEY, [newStudent, ...list]);
+    return newStudent;
+  },
+
+  delete(id: string): boolean {
+    const list = this.getAll();
+    const filtered = list.filter((s) => s.id !== id);
+    if (filtered.length === list.length) return false;
+    writeStorage(STUDENTS_STORAGE_KEY, filtered);
+    return true;
+  },
+
+  login(nisn: string, password?: string): StudentAccount | null {
+    const list = this.getAll();
+    const cleanNisn = nisn.trim();
+    const found = list.find((s) => s.nisn === cleanNisn);
+    if (!found) return null;
+    if (password && found.password && found.password !== password) {
+      return null;
+    }
+    return found;
+  },
+};
+
+// =====================================================
+// 4. SERVICE: SESI PENGGUNA (AUTH SESSION)
+// =====================================================
 export const AuthService = {
   getUser(): Profile | null {
     if (typeof window === "undefined") return null;
@@ -274,33 +273,5 @@ export const AuthService = {
 
   logout(): void {
     localStorage.removeItem(SESSION_KEY);
-  },
-
-  /** Login demo siswa (1 klik tanpa form, untuk belajar & presentasi) */
-  loginDemoSiswa(): Profile {
-    const user: Profile = {
-      id: "siswa-demo-budi",
-      nama: "Budi Santoso",
-      nisn_kelas: "0072349 - XI IPA 2",
-      email: "budi@siswa.sekolah.id",
-      role: "siswa",
-      created_at: new Date().toISOString(),
-    };
-    this.setUser(user);
-    return user;
-  },
-
-  /** Login demo admin / Guru BK */
-  loginDemoAdmin(): Profile {
-    const user: Profile = {
-      id: "admin-demo-ratna",
-      nama: "Ibu Ratna, S.Pd",
-      nisn_kelas: "Koordinator Guru BK",
-      email: "ratna.bk@sekolah.id",
-      role: "admin",
-      created_at: new Date().toISOString(),
-    };
-    this.setUser(user);
-    return user;
   },
 };

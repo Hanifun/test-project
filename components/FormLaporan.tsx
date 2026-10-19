@@ -2,19 +2,35 @@
 
 import { useState, useRef } from "react";
 import {
-  Send, Upload, X, Loader2, User, UserX,
-  AlertCircle
+  Send,
+  Upload,
+  X,
+  Loader2,
+  User,
+  Eye,
+  AlertCircle,
+  MessageSquare,
+  ShieldAlert,
+  Smartphone,
+  HeartPulse,
+  Users,
+  CircleDot,
+  FileText,
 } from "lucide-react";
 import { FormLaporanData, KategoriBullying, PeranPelapor } from "@/types";
 import { Profile } from "@/types";
 
-const KATEGORI_OPTIONS: { value: KategoriBullying; label: string; emoji: string }[] = [
-  { value: "verbal",      label: "Verbal",       emoji: "💬" },
-  { value: "fisik",       label: "Fisik",         emoji: "👊" },
-  { value: "cyber",       label: "Cyberbullying", emoji: "📱" },
-  { value: "psikologis",  label: "Psikologis",    emoji: "🧠" },
-  { value: "sosial",      label: "Sosial / Pengucilan", emoji: "👥" },
-  { value: "lainnya",     label: "Lainnya",       emoji: "🔹" },
+const KATEGORI_OPTIONS: {
+  value: KategoriBullying;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { value: "verbal", label: "Verbal (Ejekan / Hinaan)", icon: MessageSquare },
+  { value: "fisik", label: "Fisik (Pemukulan / Dorongan)", icon: ShieldAlert },
+  { value: "cyber", label: "Cyberbullying (Medsos / Chat)", icon: Smartphone },
+  { value: "psikologis", label: "Psikologis (Intimidasi / Tekanan)", icon: HeartPulse },
+  { value: "sosial", label: "Sosial (Pengucilan / Diskriminasi)", icon: Users },
+  { value: "lainnya", label: "Bentuk Lainnya", icon: CircleDot },
 ];
 
 interface Props {
@@ -39,9 +55,9 @@ export default function FormLaporan({ user, onSuccess }: Props) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    const valid = files.filter((f) => f.size <= 5 * 1024 * 1024); // max 5 MB
-    setSelectedFiles((prev) => [...prev, ...valid].slice(0, 3)); // max 3 file
-    e.target.value = ""; // reset input agar bisa upload file sama lagi
+    const valid = files.filter((f) => f.size <= 5 * 1024 * 1024);
+    setSelectedFiles((prev) => [...prev, ...valid].slice(0, 3));
+    e.target.value = "";
   };
 
   const removeFile = (idx: number) =>
@@ -59,14 +75,13 @@ export default function FormLaporan({ user, onSuccess }: Props) {
       setError("Tanggal kejadian wajib diisi.");
       return;
     }
-    if (!form.deskripsi?.trim() || form.deskripsi.length < 20) {
-      setError("Deskripsi minimal 20 karakter agar Guru BK bisa memahami kasusnya.");
+    if (!form.deskripsi?.trim() || form.deskripsi.trim().length < 15) {
+      setError("Mohon ceritakan kronologi kejadian secara ringkas dan jelas (minimal 15 karakter).");
       return;
     }
 
     setIsLoading(true);
     try {
-      // Import data service
       const { LaporanService } = await import("@/lib/data");
       const laporan = await LaporanService.create(
         { ...form, bukti_files: selectedFiles } as FormLaporanData,
@@ -74,7 +89,7 @@ export default function FormLaporan({ user, onSuccess }: Props) {
       );
       onSuccess(laporan.kode_pelacak);
     } catch {
-      setError("Gagal mengirim laporan. Coba lagi dalam beberapa saat.");
+      setError("Gagal mengirim laporan. Silakan coba sesaat lagi.");
     } finally {
       setIsLoading(false);
     }
@@ -82,89 +97,85 @@ export default function FormLaporan({ user, onSuccess }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-
-      {/* Info mode anonim vs siswa */}
-      <div className={`flex items-start gap-3 p-4 rounded-2xl border text-sm ${
-        user
-          ? "bg-blue-50 border-blue-200 text-blue-800"
-          : "bg-emerald-50 border-emerald-200 text-emerald-800"
-      }`}>
-        <div className="shrink-0 mt-0.5">
-          {user ? <User className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
-        </div>
-        <div>
-          {user ? (
-            <>
-              <strong>Masuk sebagai {user.nama}.</strong>{" "}
-              Laporan ini akan tercatat di akunmu, sehingga kamu bisa pantau lewat dashboard siswa.
-            </>
-          ) : (
-            <>
-              <strong>Mode Anonim Aktif.</strong>{" "}
-              Identitasmu tidak tersimpan. Gunakan <em>kode tiket</em> untuk cek status laporan.
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Peran */}
+      {/* Peran Pelapor */}
       <div>
-        <label className="form-label">Kamu sebagai…</label>
-        <div className="flex gap-3">
-          {(["korban", "saksi"] as PeranPelapor[]).map((p) => (
-            <button
-              type="button"
-              key={p}
-              onClick={() => set("peran_pelapor", p)}
-              className={`flex-1 py-2.5 rounded-2xl border-2 text-sm font-bold transition-all ${
-                form.peran_pelapor === p
-                  ? "border-amber-400 bg-amber-50 text-amber-800 shadow-sm"
-                  : "border-stone-200 bg-white text-stone-500 hover:border-amber-300"
-              }`}
-            >
-              {p === "korban" ? "😔 Korban" : "👁️ Saksi"}
-            </button>
-          ))}
+        <label className="form-label">Peran Pelapor</label>
+        <div className="grid grid-cols-2 gap-3">
+          {(
+            [
+              { id: "korban" as PeranPelapor, label: "Saya adalah Korban", icon: User },
+              { id: "saksi" as PeranPelapor, label: "Saya adalah Saksi", icon: Eye },
+            ] as const
+          ).map((item) => {
+            const Icon = item.icon;
+            const isSelected = form.peran_pelapor === item.id;
+            return (
+              <button
+                type="button"
+                key={item.id}
+                onClick={() => set("peran_pelapor", item.id)}
+                className={`py-3 px-4 rounded-2xl border-2 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  isSelected
+                    ? "border-amber-400 bg-amber-100/70 text-amber-950 shadow-sm"
+                    : "border-stone-200 bg-white text-stone-600 hover:border-amber-300 hover:bg-amber-50/40"
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isSelected ? "text-amber-700" : "text-stone-400"}`} />
+                {item.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Kategori */}
+      {/* Kategori Bullying */}
       <div>
-        <label className="form-label">Jenis Perundungan</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {KATEGORI_OPTIONS.map((k) => (
-            <button
-              type="button"
-              key={k.value}
-              onClick={() => set("kategori", k.value)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${
-                form.kategori === k.value
-                  ? "border-amber-400 bg-amber-50 text-amber-800 shadow-sm"
-                  : "border-stone-200 bg-white text-stone-500 hover:border-amber-300"
-              }`}
-            >
-              <span>{k.emoji}</span> {k.label}
-            </button>
-          ))}
+        <label className="form-label">Kategori Perundungan</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {KATEGORI_OPTIONS.map((k) => {
+            const Icon = k.icon;
+            const isSelected = form.kategori === k.value;
+            return (
+              <button
+                type="button"
+                key={k.value}
+                onClick={() => set("kategori", k.value)}
+                className={`flex items-center gap-3 p-3 rounded-2xl border-2 text-xs sm:text-sm font-semibold text-left transition-all cursor-pointer ${
+                  isSelected
+                    ? "border-amber-400 bg-amber-100/70 text-amber-950 shadow-sm"
+                    : "border-stone-200 bg-white text-stone-600 hover:border-amber-300 hover:bg-amber-50/40"
+                }`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+                    isSelected ? "bg-amber-400 text-stone-900" : "bg-stone-100 text-stone-500"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <span>{k.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Pelaku (opsional) */}
+      {/* Inisial Pelaku (Opsional) */}
       <div>
         <label className="form-label">
-          Inisial / Deskripsi Pelaku{" "}
+          Inisial / Identitas Pelaku{" "}
           <span className="font-normal text-stone-400">(opsional)</span>
         </label>
         <input
           className="input"
           type="text"
-          placeholder='Contoh: "Siswa kelas X berinisial R.S."'
+          placeholder="Contoh: Siswa kelas XI inisial R, atau tanpa nama"
           value={form.nama_pelaku ?? ""}
           onChange={(e) => set("nama_pelaku", e.target.value as never)}
         />
       </div>
 
-      {/* Lokasi + Tanggal */}
+      {/* Lokasi & Tanggal */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="form-label">
@@ -173,7 +184,7 @@ export default function FormLaporan({ user, onSuccess }: Props) {
           <input
             className="input"
             type="text"
-            placeholder='Contoh: "Kantin", "Grup WA Kelas"'
+            placeholder="Contoh: Belakang Kantin, Grup WhatsApp Kelas"
             required
             value={form.lokasi ?? ""}
             onChange={(e) => set("lokasi", e.target.value as never)}
@@ -194,52 +205,59 @@ export default function FormLaporan({ user, onSuccess }: Props) {
         </div>
       </div>
 
-      {/* Deskripsi */}
+      {/* Kronologi / Deskripsi */}
       <div>
         <label className="form-label">
-          Ceritakan Apa yang Terjadi <span className="text-rose-500">*</span>
+          Kronologi / Cerita Kejadian <span className="text-rose-500">*</span>
         </label>
         <textarea
           className="input resize-none"
           rows={5}
-          placeholder="Ceritakan kejadian sejelas mungkin. Semakin detail, semakin mudah Guru BK menanganinya. Minimal 20 karakter."
+          placeholder="Tuliskan apa yang terjadi secara jelas dan jujur. Informasi ini akan diperlakukan sangat rahasia oleh tim Guru BK."
           required
-          minLength={20}
+          minLength={15}
           value={form.deskripsi ?? ""}
           onChange={(e) => set("deskripsi", e.target.value as never)}
         />
-        <div className="text-right text-xs text-stone-400 mt-1">
-          {form.deskripsi?.length ?? 0} karakter
+        <div className="flex justify-between items-center text-[11px] text-stone-400 mt-1">
+          <span>Privasi dijamin sepenuhnya oleh pihak sekolah.</span>
+          <span>{form.deskripsi?.length ?? 0} karakter</span>
         </div>
       </div>
 
-      {/* Bukti (opsional) */}
+      {/* Bukti Lampiran */}
       <div>
         <label className="form-label">
-          Bukti (Foto/Screenshot){" "}
-          <span className="font-normal text-stone-400">(opsional, maks 3 file × 5 MB)</span>
+          Lampiran Bukti{" "}
+          <span className="font-normal text-stone-400">(opsional, foto / tangkapan layar)</span>
         </label>
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-amber-200 rounded-2xl p-4 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50 transition-all"
+          className="border-2 border-dashed border-amber-300/80 rounded-2xl p-4 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-100/30 transition-all bg-white"
         >
-          <Upload className="w-6 h-6 text-amber-400 mx-auto mb-1.5" />
-          <p className="text-sm text-stone-500">Klik untuk pilih file</p>
-          <p className="text-xs text-stone-400">JPG, PNG, GIF, PDF, MP4</p>
+          <Upload className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
+          <p className="text-xs font-semibold text-stone-700">Pilih berkas dari perangkat</p>
+          <p className="text-[11px] text-stone-400">Format gambar (JPG, PNG) maksimal 5 MB</p>
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/mp4,application/pdf"
+            accept="image/*"
             multiple
             className="hidden"
             onChange={handleFileChange}
           />
         </div>
         {selectedFiles.length > 0 && (
-          <ul className="mt-2 space-y-1.5">
+          <div className="mt-2 space-y-1.5">
             {selectedFiles.map((f, i) => (
-              <li key={i} className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-100 text-sm">
-                <span className="truncate max-w-[220px] text-stone-700">{f.name}</span>
+              <div
+                key={i}
+                className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-stone-700"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <FileText className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="truncate">{f.name}</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => removeFile(i)}
@@ -247,22 +265,22 @@ export default function FormLaporan({ user, onSuccess }: Props) {
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
-      {/* Kontak privat (opsional) */}
+      {/* Kontak Privat (Opsional) */}
       <div>
         <label className="form-label">
-          Kontak Privat{" "}
-          <span className="font-normal text-stone-400">(opsional — khusus bila ingin dihubungi langsung)</span>
+          Kontak Privat Pelapor{" "}
+          <span className="font-normal text-stone-400">(opsional — nomor WhatsApp bila ingin dihubungi privat oleh BK)</span>
         </label>
         <input
           className="input"
           type="text"
-          placeholder="Nomor WA atau email aman (hanya Guru BK yang bisa lihat)"
+          placeholder="Contoh: 0812-xxxx-xxxx (hanya terlihat oleh Guru BK)"
           value={form.kontak_opsional ?? ""}
           onChange={(e) => set("kontak_opsional", e.target.value as never)}
         />
@@ -272,25 +290,29 @@ export default function FormLaporan({ user, onSuccess }: Props) {
       {error && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200">
           <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-rose-700">{error}</p>
+          <p className="text-xs sm:text-sm text-rose-700">{error}</p>
         </div>
       )}
 
-      {/* Submit */}
+      {/* Tombol Kirim */}
       <button
         type="submit"
         disabled={isLoading}
-        className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+        className="btn-primary w-full py-3.5 text-sm font-bold shadow-md shadow-amber-300/40 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? (
-          <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim…</>
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" /> Mengirimkan Laporan...
+          </>
         ) : (
-          <><Send className="w-4 h-4" /> Kirim Laporan</>
+          <>
+            <Send className="w-4 h-4" /> Kirim Pengaduan Sekarang
+          </>
         )}
       </button>
 
-      <p className="text-center text-xs text-stone-400">
-        Dengan mengirim, kamu setuju bahwa laporan ini akan diproses secara rahasia oleh Guru BK.
+      <p className="text-center text-[11px] text-stone-400">
+        Laporan dikirim secara terenkripsi dan langsung diteruskan ke meja Guru BK.
       </p>
     </form>
   );

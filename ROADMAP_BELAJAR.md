@@ -1,144 +1,86 @@
-# 📚 ROADMAP & PANDUAN LENGKAP PROYEK SAFEREPORT
-> **Sistem Pengaduan Bullying Sekolah & Kelas — Aman, Anonim, Ceria & Terpercaya**  
-> *Warna Identitas:* **Kuning Hangat / Amber (#f59e0b)**  
-> *Prinsip Utama:* **Zero-Friction Anonymous First** (Siswa bisa melapor tanpa hambatan login)
+# 📚 SafeReport — Panduan Lengkap & Petunjuk Penggunaan Proyek Nyata
+> **Sistem Pengaduan Bullying Sekolah & Kelas — Aman, 100% Anonim, Simpel & Bebas Hambatan**  
+> *Identitas Visual:* **Kuning Hangat / Amber (#f59e0b & #fbbf24)**  
+> *Arsitektur:* **Direct Anonymous Form (Tanpa Landing Page Berbelit, Langsung Formulir Aduan)**
 
 ---
 
-## 📌 Status Pengerjaan (Semua Tahap Selesai!)
+## 🎯 Panduan Lengkap Cara Memakai Aplikasi
 
-- [x] **Tahap 1: Setup Dasar & Git Version Control**
-  - [x] Inisialisasi Git lokal (`git init`) dan remote GitHub (`https://github.com/Hanifun/test-project`)
-  - [x] File `.gitignore` aman (mengabaikan `node_modules`, `.next`, `.env*.local`)
-  - [x] Pengaturan proyek Next.js 15 + TypeScript + Tailwind CSS
-
-- [x] **Tahap 2: Sistem Desain & Konfigurasi Tema**
-  - [x] Palet warna Kuning Hangat / Amber (`brand-50` s.d. `brand-900`) di `tailwind.config.ts`
-  - [x] Styling global komponen kartu (`card`), tombol utama (`btn-primary`), tombol sekunder (`btn-secondary`), badge status di `app/globals.css`
-  - [x] Tipografi modern Google Font Inter & Nunito
-
-- [x] **Tahap 3: Arsitektur Data & Tipe Data (Dual Engine)**
-  - [x] Definisi tipe data lengkap di `types/index.ts` (`Laporan`, `Profile`, `StatusLaporan`, `TindakLanjut`, dll.)
-  - [x] Generator kode tiket unik (contoh: `SF-7K2X`) di `lib/utils.ts`
-  - [x] Service penyimpanan data (`lib/data.ts`) dengan engine **localStorage** dan data demo interaktif siap pakai
-  - [x] Skema database cloud PostgreSQL untuk Supabase di `supabase_schema.sql`
-
-- [x] **Tahap 4: Halaman Publik Siswa**
-  - [x] **Beranda (`app/page.tsx`):** Hero section ceria, statistik pengaduan, kartu fitur keunggulan, alur cara pakai, tombol aksi cepat
-  - [x] **Formulir Pengaduan (`app/lapor/page.tsx`):** Pilihan peran (korban/saksi), kategori perundungan, deskripsi kronologi, upload bukti lampiran, kontak opsional
-  - [x] **Modal Tiket Sukses (`components/ModalTiket.tsx`):** Menampilkan kode pelacak unik dengan tombol 1-klik salin dan pengingat screenshot
-  - [x] **Lacak Status (`app/status/page.tsx`):** Cek progres laporan via kode tiket pelacak, visual timeline tahapan, dan pesan balasan dari Guru BK
-
-- [x] **Tahap 5: Portal Akun Siswa**
-  - [x] **Login Siswa (`app/login/page.tsx`):** Tombol 1-klik demo masuk sebagai Budi Santoso (XI IPA 2) atau login manual
-  - [x] **Dashboard Siswa (`app/dashboard/page.tsx`):** Melihat riwayat laporan yang pernah dikirim, status terkini, dan akses buat laporan baru
-
-- [x] **Tahap 6: Portal Guru BK & Satgas Kesiswaan**
-  - [x] **Login Guru BK (`app/admin/login/page.tsx`):** Tombol 1-klik demo masuk sebagai Ibu Ratna, S.Pd (Koordinator BK)
-  - [x] **Dashboard Manajemen BK (`app/admin/dashboard/page.tsx`):**
-    - Ringkasan metrik (Total Kasus, Perlu Ditinjau, Sedang Diproses, Selesai)
-    - Filter berdasarkan status kasus dan kategori bullying
-    - Kolom pencarian realtime (kode tiket, lokasi, pelaku, nama)
-    - Modal kelola kasus: ubah status penanganan secara dinamis
-    - Formulir kirim balasan/catatan perkembangan kasus langsung ke siswa
-
-- [x] **Tahap 7: Kesiapan Publikasi Online**
-  - [x] Template Environment Variables (`.env.example`)
-  - [x] Panduan Deploy ke Vercel (Gratis & Cepat)
-  - [x] Panduan Sambung ke Supabase (Database Cloud)
+### 1. Masuk ke Portal Guru BK / Admin (Langkah Pertama)
+1. Buka browser dan kunjungi: **`http://localhost:3000/admin/login`** (atau klik menu **"Portal BK"** di pojok kanan atas).
+2. Terdapat 2 opsi:
+   - **Gunakan Akun Bawaan Awal:**
+     - **Email:** `admin@sekolah.id`
+     - **Kata Sandi:** `admin`
+   - **Atau Buat Akun Admin Baru:**
+     - Klik tab **"Buat Akun Admin"**, isi Nama Guru BK (contoh: *Ibu Ratna, S.Pd*), Email, Jabatan, dan Kata Sandi, lalu klik **Daftarkan**.
+3. Klik **"Masuk Dashboard BK"**. Kamu sekarang berada di panel kendali Guru BK.
 
 ---
 
-## 🧭 Struktur Berkas Proyek
-
-```
-safe-report/
-├── app/
-│   ├── admin/
-│   │   ├── dashboard/page.tsx   # Dashboard Guru BK (Kelola laporan, ubah status, kirim balasan)
-│   │   ├── login/page.tsx       # Login Portal Guru BK (Ada 1-klik demo)
-│   │   └── page.tsx             # Pengalihan otomatis admin
-│   ├── dashboard/page.tsx       # Dashboard Siswa (Riwayat laporan akun siswa)
-│   ├── lapor/page.tsx           # Formulir Pembuatan Laporan Pengaduan
-│   ├── login/page.tsx           # Login Siswa (Ada 1-klik demo)
-│   ├── status/page.tsx          # Halaman Lacak Status via Kode Tiket (SF-XXXX)
-│   ├── globals.css              # Desain visual, palet warna kuning amber & komponen UI
-│   ├── layout.tsx               # Root layout & Metadata SEO
-│   └── page.tsx                 # Halaman Beranda (Landing Page)
-├── components/
-│   ├── Footer.tsx               # Footer (Hotline darurat SAPPA 129 & privasi)
-│   ├── FormLaporan.tsx          # Komponen formulir pengaduan interaktif
-│   ├── ModalTiket.tsx           # Modal popup kode pelacak & tombol salin
-│   ├── Navbar.tsx               # Navigasi atas + status mode anonim aktif
-│   └── TimelineStatus.tsx       # Alur visual status: Baru -> Diverifikasi -> Diproses -> Selesai
-├── lib/
-│   ├── data.ts                  # Service penyimpanan data & demo mock
-│   └── utils.ts                 # Generator kode tiket & pemformat tanggal Indonesia
-├── types/
-│   └── index.ts                 # Definisi tipe data TypeScript
-├── supabase_schema.sql          # Skrip database cloud Supabase PostgreSQL + RLS
-├── .env.example                 # Template konfigurasi environment Supabase
-├── tailwind.config.ts           # Konfigurasi Tailwind & warna Amber ceria
-└── package.json                 # Dependensi proyek
-```
+### 2. Mendaftarkan Akun Siswa (Dibuat oleh Guru BK)
+1. Di Dashboard BK, klik tab **"Kelola Akun Siswa"**.
+2. Pada formulir **"Tambah Akun Siswa Baru"**, masukkan:
+   - **Nama Lengkap Siswa:** contoh *Budi Pratama*
+   - **NISN:** contoh *007234901*
+   - **Kelas:** contoh *XI IPA 2*
+   - **PIN / Kata Sandi Awal:** contoh *123456* (atau sesuai keinginan)
+3. Klik **"Daftarkan"**.
+4. Akun siswa langsung aktif dan tercatat pada tabel siswa terdaftar.
 
 ---
 
-## 🧪 Cara Menjalankan & Menguji Secara Lokal
-
-1. **Buka Terminal di direktori proyek:**
-   ```bash
-   npm run dev
-   ```
-2. **Buka di Browser:**
-   Akses `http://localhost:3000`
-
-### Skenario Uji Coba Lengkap:
-1. **Mengirim Laporan Anonim (Siswa):**
-   - Buka Beranda, klik **"Buat Laporan Sekarang"** (atau `/lapor`).
-   - Pilih jenis bullying (misal: *Verbal*), isi lokasi (*Kantin*), tanggal, dan ceritakan kejadiannya.
-   - Klik **"Kirim Laporan"**.
-   - Simpan / salin **Kode Tiket** yang muncul (contoh: `SF-XXXX`).
-2. **Memeriksa Status Laporan (Siswa):**
-   - Buka menu **"Cek Status"** (atau `/status`).
-   - Masukkan kode tiket yang tadi didapatkan (atau coba kode demo: `SF-7K2X`).
-   - Lihat alur tahapan kasus dan pesan tanggapan dari Guru BK.
-3. **Mengelola Laporan (Guru BK):**
-   - Buka `/admin/login`.
-   - Klik tombol **"1-Klik Masuk Demo: Ibu Ratna, S.Pd (Guru BK)"**.
-   - Pada Dashboard BK, kamu bisa:
-     - Memfilter laporan berdasarkan status/kategori.
-     - Klik **"Kelola Kasus"** pada laporan yang masuk.
-     - Mengubah status (misal dari *Baru* menjadi *Diproses* atau *Selesai*).
-     - Mengetik dan mengirim balasan tindak lanjut.
-4. **Verifikasi Balasan:**
-   - Kembali ke halaman `/status` dengan kode tiket tadi, pesan dari Guru BK akan langsung muncul secara realtime!
+### 3. Mengirimkan Pengaduan Bullying (Oleh Siswa / Pelapor)
+Aplikasi ini menerapkan prinsip **Zero-Friction Anonymous First**:
+1. Buka halaman utama: **`http://localhost:3000`**.
+2. Halaman langsung menampilkan **Formulir Pengaduan** tanpa perlu login terlebih dahulu!
+3. Siswa mengisi:
+   - **Peran:** Korban atau Saksi.
+   - **Kategori Bullying:** Verbal, Fisik, Cyberbullying, Psikologis, Sosial, atau Lainnya.
+   - **Inisial Pelaku:** *(opsional)*.
+   - **Lokasi & Tanggal Kejadian:** tempat dan waktu kejadian.
+   - **Kronologi:** ceritakan apa yang dialami/dilihat.
+   - **Lampiran Bukti:** *(opsional, foto/tangkapan layar)*.
+   - **Kontak Privat:** *(opsional, no WhatsApp jika siswa ingin dihubungi privat oleh BK)*.
+4. Klik **"Kirim Pengaduan Sekarang"**.
+5. Muncul popup **Modal Tiket Sukses** dengan **Kode Tiket Pelacak** (contoh: `SF-8K9P`).
+6. Siswa mengklik tombol **"Salin"** dan screenshot kode tersebut.
 
 ---
 
-## 🚀 Panduan Publikasi Online (Deployment)
+### 4. Guru BK Meninjau & Menindaklanjuti Laporan
+1. Buka kembali **Dashboard BK** (`http://localhost:3000/admin/dashboard`).
+2. Di tab **"Daftar Pengaduan"**, laporan yang baru saja dikirim siswa akan langsung muncul dengan status **`baru`**.
+3. Klik tombol **"Kelola Kasus"** pada laporan tersebut.
+4. Guru BK dapat:
+   - Membaca detail kronologi, bukti foto, dan info pelaku.
+   - Mengubah status penanganan: **`diverifikasi`** ➔ **`diproses`** ➔ **`selesai`**.
+   - Mengetik pesan perkembangan kasus di kolom **"Tulis balasan atau tindak lanjut"** (contoh: *"Laporan sudah kami terima. Sedang dijadwalkan mediasi tertutup bersama wali kelas."*), lalu klik **"Kirim Balasan ke Siswa"**.
 
-### Langkah 1: Push Kode ke GitHub
-Pastikan seluruh perubahan terkini sudah di-push ke repositori GitHub:
-```bash
-git add .
-git commit -m "feat: complete SafeReport web application with playful amber theme"
-git push origin main
-```
+---
 
-### Langkah 2: Deploy ke Vercel (Gratis)
-1. Buka [https://vercel.com](https://vercel.com) dan login menggunakan akun GitHub-mu.
-2. Klik tombol **"Add New..."** lalu pilih **"Project"**.
-3. Pilih repositori **`test-project`** (atau `safe-report`) dari daftar repositori GitHub.
-4. Pada bagian *Framework Preset*, Vercel akan otomatis mendeteksi **Next.js**.
-5. Klik tombol **"Deploy"**.
-6. Dalam 1-2 menit, aplikasimu sudah aktif dan memiliki URL publik (misal: `safe-report-test.vercel.app`) yang bisa langsung dibuka oleh klien dan teman sekelas!
+### 5. Siswa Memantau Perkembangan Kasus
+1. Siswa membuka menu **"Lacak Tiket"** di halaman web (`http://localhost:3000/status`).
+2. Masukkan Kode Tiket pelacak miliknya (misal: `SF-8K9P`).
+3. Siswa dapat melihat:
+   - Status terbaru penanganan kasusnya secara transparan.
+   - Alur timeline proses penanganan.
+   - Pesan balasan resmi dari Guru BK.
 
-### Langkah 3: Menghubungkan ke Supabase (Opsional jika ingin Database Cloud)
-1. Buka [https://supabase.com](https://supabase.com) dan buat proyek baru.
-2. Buka menu **SQL Editor**, buka file `supabase_schema.sql` dari proyek ini, lalu klik **Run** untuk membuat semua tabel otomatis.
-3. Masuk ke **Project Settings -> API**, salin `Project URL` dan `anon public key`.
-4. Di dashboard Vercel, masuk ke **Settings -> Environment Variables**, lalu tambahkan:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-5. Lakukan *Redeploy* di Vercel. Selesai!
+---
+
+### 6. Opsi Masuk Siswa Terdaftar (Bila Siswa Memiliki Akun dari BK)
+- Jika siswa ingin melihat riwayat seluruh laporan yang pernah ia buat dengan akunnya:
+  1. Masuk ke `http://localhost:3000/login`.
+  2. Masukkan **NISN** dan **PIN** yang telah dibuatkan Guru BK sebelumnya.
+  3. Siswa akan masuk ke **Dashboard Siswa** (`/dashboard`) dan melihat daftar laporan akunnya.
+
+---
+
+## 🚀 Publikasi Online ke Vercel (Gratis & Cepat)
+1. Buka [https://vercel.com](https://vercel.com) dan login dengan akun GitHub kamu (**Hanifun**).
+2. Klik tombol **"Add New..."** ➔ **"Project"**.
+3. Pilih repositori **`test-project`**.
+4. Klik tombol **"Deploy"**.
+5. Selesai! Dalam 1-2 menit, aplikasimu sudah online dan memiliki link publik (misal: `https://test-project-hanifun.vercel.app`) yang siap dibagikan ke klien kelas dan sekolah!

@@ -7,124 +7,249 @@ import {
   ShieldCheck,
   Lock,
   ArrowRight,
-  Sparkles,
   ArrowLeft,
   KeyRound,
+  UserPlus,
+  LogIn,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
-import { AuthService } from "@/lib/data";
+import { AdminService, AuthService } from "@/lib/data";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [nama, setNama] = useState("");
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
-  const handleManualLogin = (e: React.FormEvent) => {
+  // State Login
+  const [loginEmail, setLoginEmail] = useState("admin@sekolah.id");
+  const [loginPassword, setLoginPassword] = useState("admin");
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // State Buat Akun Admin Baru
+  const [regNama, setRegNama] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regJabatan, setRegJabatan] = useState("");
+  const [regSuccess, setRegSuccess] = useState<string | null>(null);
+
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nama.trim()) return;
+    setLoginError(null);
+
+    const admin = AdminService.login(loginEmail, loginPassword);
+    if (!admin) {
+      setLoginError("Email atau kata sandi tidak cocok.");
+      return;
+    }
 
     AuthService.setUser({
-      id: `admin-${Date.now()}`,
-      nama: nama.trim(),
-      nisn_kelas: "Guru BK / Staf Kesiswaan",
-      email: email.trim() || "admin.bk@sekolah.id",
+      id: admin.id,
+      nama: admin.nama,
+      email: admin.email,
+      nisn_kelas: admin.nip_jabatan || "Guru BK",
       role: "admin",
-      created_at: new Date().toISOString(),
+      created_at: admin.created_at,
     });
 
     router.push("/admin/dashboard");
   };
 
-  const handleQuickDemo = () => {
-    AuthService.loginDemoAdmin();
-    router.push("/admin/dashboard");
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regNama.trim() || !regEmail.trim()) return;
+
+    const newAdmin = AdminService.create({
+      nama: regNama.trim(),
+      email: regEmail.trim(),
+      password: regPassword || "admin123",
+      nip_jabatan: regJabatan.trim() || "Guru Bimbingan Konseling",
+    });
+
+    setRegSuccess(`Akun admin atas nama "${newAdmin.nama}" berhasil dibuat. Silakan masuk.`);
+    setLoginEmail(newAdmin.email);
+    setLoginPassword(newAdmin.password || "");
+    setActiveTab("login");
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-900 text-stone-100 px-4 py-12 justify-center items-center">
       <div className="max-w-md w-full">
-        {/* Tombol Kembali ke Beranda */}
+        {/* Tombol Kembali ke Halaman Publik */}
         <div className="mb-6">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-stone-400 hover:text-amber-400 text-xs font-semibold transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Portal Siswa
+            <ArrowLeft className="w-4 h-4" /> Kembali ke Halaman Pengaduan
           </Link>
         </div>
 
-        <div className="bg-stone-800/90 border border-stone-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm">
+        <div className="bg-stone-800/90 border border-stone-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xs">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-amber-400 text-stone-950 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-amber-400/20 font-black">
-              <ShieldCheck className="w-7 h-7" />
+            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-stone-950 flex items-center justify-center mx-auto mb-3 shadow-md font-black">
+              <ShieldCheck className="w-6 h-6 text-stone-950" />
             </div>
-            <h1 className="text-2xl font-black text-white">
+            <h1 className="text-xl sm:text-2xl font-black text-white">
               Portal Guru BK & Admin
             </h1>
             <p className="text-xs text-stone-400 mt-1">
-              Khusus staf Bimbingan Konseling dan Satgas Pencegahan Kekerasan Sekolah.
+              Pusat kelola pengaduan dan manajemen akun siswa sekolah.
             </p>
           </div>
 
-          {/* Quick Demo Button */}
-          <div className="mb-6">
+          {/* Tab Selector: Masuk / Buat Akun Admin */}
+          <div className="grid grid-cols-2 p-1 rounded-2xl bg-stone-900 border border-stone-700 mb-6 text-xs font-bold">
             <button
-              onClick={handleQuickDemo}
               type="button"
-              className="w-full p-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-95"
+              onClick={() => setActiveTab("login")}
+              className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeTab === "login"
+                  ? "bg-amber-400 text-stone-950 shadow-xs"
+                  : "text-stone-400 hover:text-white"
+              }`}
             >
-              <Sparkles className="w-4 h-4 text-stone-900" />
-              1-Klik Masuk Demo: Ibu Ratna, S.Pd (Guru BK)
+              <LogIn className="w-3.5 h-3.5" /> Masuk Admin
             </button>
-            <div className="relative my-5 text-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-stone-700" />
-              </div>
-              <span className="relative bg-stone-800 px-3 text-[11px] text-stone-400 font-semibold uppercase">
-                Atau Masuk Staf
-              </span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("register")}
+              className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeTab === "register"
+                  ? "bg-amber-400 text-stone-950 shadow-xs"
+                  : "text-stone-400 hover:text-white"
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" /> Buat Akun Admin
+            </button>
           </div>
 
-          {/* Manual Form */}
-          <form onSubmit={handleManualLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                Nama Guru BK / Admin
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Contoh: Ibu Ratna, S.Pd"
-                value={nama}
-                onChange={(e) => setNama(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-sm placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+          {regSuccess && (
+            <div className="mb-4 p-3 rounded-2xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{regSuccess}</span>
             </div>
+          )}
 
-            <div>
-              <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                Email Sekolah / NIP
-              </label>
-              <input
-                type="text"
-                placeholder="bk@sekolah.sch.id"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-sm placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
-            </div>
+          {activeTab === "login" ? (
+            /* Tab 1: Form Login */
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-300 mb-1.5">
+                  Email Admin / Guru BK
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="admin@sekolah.id"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
 
-            <button
-              type="submit"
-              className="w-full py-3 rounded-2xl bg-stone-700 hover:bg-stone-600 text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
-            >
-              Masuk Dashboard BK <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+              <div>
+                <label className="block text-xs font-bold text-stone-300 mb-1.5">
+                  Kata Sandi
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Masukkan kata sandi"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              {loginError && (
+                <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
+              >
+                Masuk Dashboard BK <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <div className="p-3 rounded-2xl bg-stone-900/90 border border-stone-700/80 text-[11px] text-stone-400 leading-relaxed">
+                <span className="font-bold text-amber-300 block mb-0.5">Akun Bawaan Awal:</span>
+                Email: <code className="text-stone-200">admin@sekolah.id</code> • Sandi: <code className="text-stone-200">admin</code>
+              </div>
+            </form>
+          ) : (
+            /* Tab 2: Form Buat Akun Admin */
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-300 mb-1.5">
+                  Nama Lengkap Guru BK
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Ibu Ratna, S.Pd"
+                  value={regNama}
+                  onChange={(e) => setRegNama(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-300 mb-1.5">
+                  Email Guru BK
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="bk@sekolah.sch.id"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-300 mb-1.5">
+                  Jabatan / Unit
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Koordinator BK / Satgas Kekerasan"
+                  value={regJabatan}
+                  onChange={(e) => setRegJabatan(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-300 mb-1.5">
+                  Kata Sandi
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Minimal 6 karakter"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
+              >
+                Daftarkan Akun Admin Baru <UserPlus className="w-4 h-4" />
+              </button>
+            </form>
+          )}
 
           <p className="mt-6 text-center text-[11px] text-stone-500">
-            Akses diawasi oleh kebijakan perlindungan data & privasi peserta didik.
+            Akses terbatas hanya untuk staf yang berwenang.
           </p>
         </div>
       </div>

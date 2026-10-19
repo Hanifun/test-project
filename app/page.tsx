@@ -1,171 +1,84 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ShieldCheck, Send, Search, Lock, ArrowRight, Users, TrendingUp } from "lucide-react";
+import {
+  ShieldCheck,
+  Search,
+  Lock,
+  HeartHandshake,
+  ArrowRight,
+  Info,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-// Statistik dummy yang terlihat nyata
-const STATS = [
-  { label: "Laporan Masuk", value: "47", icon: <Send className="w-5 h-5" /> },
-  { label: "Kasus Terselesaikan", value: "38", icon: <ShieldCheck className="w-5 h-5" /> },
-  { label: "Siswa Terbantu", value: "53+", icon: <Users className="w-5 h-5" /> },
-];
-
-const FITUR = [
-  {
-    emoji: "🕵️",
-    judul: "100% Anonim",
-    deskripsi: "Laporkan tanpa takut. Identitasmu tidak pernah tersimpan kecuali kamu mau.",
-  },
-  {
-    emoji: "🔒",
-    judul: "Hanya Guru BK yang Akses",
-    deskripsi: "Laporan dienkripsi dan hanya dapat dibuka oleh staf BK yang berwenang.",
-  },
-  {
-    emoji: "📊",
-    judul: "Pantau Prosesnya",
-    deskripsi: "Setiap laporan punya kode tiket unik untuk melacak progres penanganannya.",
-  },
-  {
-    emoji: "⚡",
-    judul: "Langsung Ditangani",
-    deskripsi: "Notifikasi otomatis ke Guru BK setiap ada laporan baru masuk.",
-  },
-];
+import FormLaporan from "@/components/FormLaporan";
+import ModalTiket from "@/components/ModalTiket";
+import { AuthService } from "@/lib/data";
+import { Profile } from "@/types";
 
 export default function HomePage() {
+  const [user, setUser] = useState<Profile | null>(null);
+  const [submittedKode, setSubmittedKode] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUser(AuthService.getUser());
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-amber-50/50">
       <Navbar />
 
-      <main className="flex-1">
-        {/* ===== HERO ===== */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-white to-amber-50 py-20 px-4">
-          {/* Dekorasi lingkaran blur */}
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-amber-100/60 blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] rounded-full bg-amber-200/40 blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-
-          <div className="relative max-w-3xl mx-auto text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-sm font-semibold mb-6 animate-fade-in">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              Platform Aman untuk Bersuara
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-8 sm:py-10">
+        {/* Banner Penjelasan Sederhana & Ramah */}
+        <div className="card p-6 sm:p-7 mb-6 border border-amber-200/90 bg-gradient-to-br from-white via-amber-50/50 to-white shadow-xs">
+          <div className="flex items-start gap-3.5 mb-3">
+            <div className="w-11 h-11 rounded-2xl bg-amber-400 text-stone-900 flex items-center justify-center shrink-0 shadow-xs">
+              <ShieldCheck className="w-6 h-6 text-stone-900" />
             </div>
-
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-stone-900 leading-tight mb-5 animate-fade-in">
-              Laporkan Perundungan{" "}
-              <span className="text-amber-500 underline decoration-wavy decoration-amber-300/70 underline-offset-4">
-                dengan Aman
-              </span>
-              , <br />Tanpa Takut
-            </h1>
-
-            <p className="text-base sm:text-lg text-stone-600 max-w-xl mx-auto mb-8 leading-relaxed animate-fade-in">
-              SafeReport membantu siswa melaporkan kejadian bullying secara anonim dan aman.
-              Guru BK akan segera menindaklanjuti setiap laporan.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
-              <Link
-                href="/lapor"
-                id="btn-hero-lapor"
-                className="btn-primary text-base px-8 py-3.5 shadow-md shadow-amber-200"
-              >
-                <Send className="w-5 h-5" />
-                Buat Laporan Sekarang
-              </Link>
-              <Link
-                href="/status"
-                className="btn-secondary text-base px-8 py-3.5"
-              >
-                <Search className="w-5 h-5" />
-                Cek Status Laporan
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* ===== STATISTIK ===== */}
-        <section className="py-10 px-4 bg-white border-y border-amber-100">
-          <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4">
-            {STATS.map((s) => (
-              <div key={s.label} className="text-center">
-                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-2">
-                  {s.icon}
-                </div>
-                <div className="text-2xl font-extrabold text-stone-900">{s.value}</div>
-                <div className="text-xs text-stone-500 font-medium">{s.label}</div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold uppercase tracking-wider mb-1">
+                <Lock className="w-3 h-3 text-amber-700" /> Pengaduan Rahasia & Bebas Hambatan
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ===== FITUR ===== */}
-        <section className="py-16 px-4 bg-amber-50">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-extrabold text-stone-900 mb-2">
-                Kenapa SafeReport?
-              </h2>
-              <p className="text-stone-500 text-sm">
-                Dirancang khusus untuk lingkungan sekolah dengan privasi dan keamanan sebagai prioritas utama.
+              <h1 className="text-xl sm:text-2xl font-black text-stone-900 leading-tight">
+                Sampaikan Pengaduan Bullying
+              </h1>
+              <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed">
+                Kamu bisa melapor secara <strong>100% Anonim</strong> tanpa harus login atau menyebutkan identitasmu. Laporan akan langsung ditangani oleh Guru Bimbingan Konseling (BK).
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {FITUR.map((f) => (
-                <div key={f.judul} className="card p-5 hover:shadow-md hover:border-amber-200 transition-all">
-                  <div className="text-2xl mb-3">{f.emoji}</div>
-                  <h3 className="font-bold text-stone-800 mb-1">{f.judul}</h3>
-                  <p className="text-sm text-stone-500 leading-relaxed">{f.deskripsi}</p>
-                </div>
-              ))}
-            </div>
           </div>
-        </section>
 
-        {/* ===== CARA PAKAI ===== */}
-        <section className="py-16 px-4 bg-white">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-extrabold text-stone-900 mb-2">Cara Penggunaan</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 mt-3 border-t border-amber-100 text-xs text-stone-500">
+            <div className="flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>Sudah pernah mengirim laporan?</span>
             </div>
-            <div className="flex flex-col gap-4">
-              {[
-                { no: "01", judul: "Isi Form Laporan", desc: "Ceritakan apa yang terjadi, boleh anonim, boleh pakai nama." },
-                { no: "02", judul: "Simpan Kode Tiket", desc: "Setelah mengirim, kamu dapat kode unik. Screenshot dan simpan baik-baik." },
-                { no: "03", judul: "Guru BK Menindaklanjuti", desc: "BK akan memproses laporan secara rahasia dan merespons dalam 1-2 hari." },
-                { no: "04", judul: "Pantau Status", desc: "Pakai kode tiket di halaman /status untuk melihat perkembangan kasus." },
-              ].map((s) => (
-                <div key={s.no} className="flex items-start gap-4 p-4 rounded-2xl hover:bg-amber-50 transition-colors">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-400/20 text-amber-700 font-extrabold text-sm flex items-center justify-center shrink-0 font-mono">
-                    {s.no}
-                  </div>
-                  <div>
-                    <div className="font-bold text-stone-800 mb-0.5">{s.judul}</div>
-                    <div className="text-sm text-stone-500">{s.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Link
+              href="/status"
+              className="font-bold text-amber-700 hover:text-amber-800 underline inline-flex items-center gap-1"
+            >
+              Cek status laporan menggunakan Kode Tiket <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-        </section>
+        </div>
 
-        {/* ===== CTA BAWAH ===== */}
-        <section className="py-14 px-4 bg-amber-400 text-center">
-          <h2 className="text-2xl font-extrabold text-stone-900 mb-3">
-            Kamu Tidak Sendirian 💛
-          </h2>
-          <p className="text-stone-800/80 text-sm mb-6 max-w-md mx-auto">
-            Berani melapor adalah langkah pertama. SafeReport ada untuk mendampingimu.
-          </p>
-          <Link
-            href="/lapor"
-            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white font-bold px-6 py-3 rounded-2xl transition-colors shadow-md"
-          >
-            Mulai Laporan <ArrowRight className="w-4 h-4" />
-          </Link>
-        </section>
+        {/* Kontainer Formulir Pengaduan */}
+        <div className="card p-6 sm:p-8 border border-amber-200/90 shadow-sm">
+          <FormLaporan
+            user={user}
+            onSuccess={(kode) => setSubmittedKode(kode)}
+          />
+        </div>
       </main>
+
+      {/* Modal Tiket Sukses Setelah Laporan Terkirim */}
+      {submittedKode && (
+        <ModalTiket
+          kode={submittedKode}
+          onClose={() => setSubmittedKode(null)}
+        />
+      )}
 
       <Footer />
     </div>

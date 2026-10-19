@@ -4,131 +4,127 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ShieldCheck,
   User,
   Lock,
   ArrowRight,
-  Sparkles,
   ArrowLeft,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { AuthService } from "@/lib/data";
+import { AuthService, StudentService } from "@/lib/data";
 
 export default function LoginPage() {
   const router = useRouter();
   const [nisn, setNisn] = useState("");
-  const [nama, setNama] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleManualLogin = (e: React.FormEvent) => {
+  const handleStudentLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nama.trim()) return;
+    setError(null);
 
+    if (!nisn.trim()) {
+      setError("Silakan masukkan NISN.");
+      return;
+    }
+
+    const student = StudentService.login(nisn, password);
+    if (!student) {
+      setError("NISN atau kata sandi tidak cocok. Akun siswa dibuat oleh Guru BK di sekolah.");
+      return;
+    }
+
+    // Set sesi profil siswa
     AuthService.setUser({
-      id: `siswa-${Date.now()}`,
-      nama: nama.trim(),
-      nisn_kelas: nisn.trim() || "Siswa Kelas",
+      id: student.id,
+      nama: student.nama,
+      nisn_kelas: `${student.nisn} - ${student.kelas}`,
       role: "siswa",
-      created_at: new Date().toISOString(),
+      created_at: student.created_at,
     });
 
     router.push("/dashboard");
   };
 
-  const handleQuickDemo = () => {
-    AuthService.loginDemoSiswa();
-    router.push("/dashboard");
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-amber-50/60">
+    <div className="min-h-screen flex flex-col bg-amber-50/50">
       <Navbar />
 
       <main className="flex-1 max-w-md mx-auto w-full px-4 py-12 flex flex-col justify-center">
-        {/* Tombol Kembali */}
+        {/* Tombol Kembali ke Halaman Utama */}
         <div className="mb-6">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-600 text-sm font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-700 text-xs sm:text-sm font-semibold transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Beranda
+            <ArrowLeft className="w-4 h-4" /> Kembali ke Form Laporan Anonim
           </Link>
         </div>
 
-        <div className="card p-6 sm:p-8 bg-white border border-amber-100 shadow-sm">
+        <div className="card p-6 sm:p-8 bg-white border border-amber-200/90 shadow-sm">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-stone-900 flex items-center justify-center mx-auto mb-3 shadow-sm shadow-amber-200">
+            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-stone-900 flex items-center justify-center mx-auto mb-3 shadow-xs">
               <User className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-extrabold text-stone-900">
-              Portal Masuk Siswa
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900">
+              Masuk Akun Siswa
             </h1>
             <p className="text-xs text-stone-500 mt-1">
-              Masuk untuk memantau seluruh riwayat pengaduan yang pernah kamu buat.
+              Gunakan akun siswa yang telah didaftarkan oleh Guru BK.
             </p>
           </div>
 
-          {/* Quick 1-Click Demo Login Button */}
-          <div className="mb-6">
-            <button
-              onClick={handleQuickDemo}
-              type="button"
-              className="w-full p-3.5 rounded-2xl bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 text-amber-900 font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
-            >
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              1-Klik Demo: Masuk sbg Budi Santoso (XI IPA 2)
-            </button>
-            <div className="relative my-5 text-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-amber-200" />
-              </div>
-              <span className="relative bg-white px-3 text-xs text-stone-400 font-semibold uppercase">
-                Atau Isi Manual
-              </span>
-            </div>
-          </div>
-
-          {/* Manual Form */}
-          <form onSubmit={handleManualLogin} className="space-y-4">
+          {/* Form Login Siswa */}
+          <form onSubmit={handleStudentLogin} className="space-y-4">
             <div>
-              <label className="form-label">Nama Lengkap Siswa</label>
+              <label className="form-label">Nomor Induk Siswa Nasional (NISN)</label>
               <input
                 type="text"
                 required
-                placeholder="Contoh: Budi Santoso"
-                value={nama}
-                onChange={(e) => setNama(e.target.value)}
-                className="input"
-              />
-            </div>
-
-            <div>
-              <label className="form-label">
-                NISN & Kelas <span className="text-stone-400 font-normal">(opsional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Contoh: 0072349 - XI IPA 2"
+                placeholder="Masukkan NISN kamu"
                 value={nisn}
                 onChange={(e) => setNisn(e.target.value)}
                 className="input"
               />
             </div>
 
-            <button type="submit" className="btn-primary w-full py-3">
+            <div>
+              <label className="form-label">Kata Sandi / PIN</label>
+              <input
+                type="password"
+                required
+                placeholder="Masukkan kata sandi"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary w-full py-3 text-sm font-bold shadow-xs">
               Masuk ke Akun Saya <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          {/* Hint lapor anonim */}
-          <div className="mt-6 pt-5 border-t border-amber-100 text-center text-xs text-stone-500">
-            Ingin melapor tanpa diketahui identitasmu?{" "}
+          {/* Informasi Melapor Anonim */}
+          <div className="mt-6 pt-5 border-t border-amber-100 text-center space-y-2">
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Belum punya akun atau ingin melapor tanpa nama?
+            </p>
             <Link
-              href="/lapor"
-              className="font-bold text-amber-600 hover:text-amber-700 underline"
+              href="/"
+              className="inline-block font-bold text-xs text-amber-700 hover:text-amber-800 underline"
             >
-              Gunakan Mode Anonim
+              Kirim Pengaduan Bebas Secara Anonim
             </Link>
           </div>
         </div>

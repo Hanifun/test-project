@@ -16,33 +16,49 @@ import {
   Send,
   User,
   UserX,
-  Calendar,
-  MapPin,
   ExternalLink,
   ChevronRight,
   X,
+  Users,
+  UserPlus,
+  Trash2,
+  KeyRound,
+  Inbox,
 } from "lucide-react";
-import { AuthService, LaporanService } from "@/lib/data";
+import { AuthService, LaporanService, StudentService } from "@/lib/data";
 import { formatTanggal, formatTanggalWaktu } from "@/lib/utils";
-import { Laporan, Profile, StatusLaporan, KategoriBullying } from "@/types";
+import { Laporan, Profile, StatusLaporan, StudentAccount } from "@/types";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [admin, setAdmin] = useState<Profile | null>(null);
+
+  // Navigasi Tab Admin
+  const [activeTab, setActiveTab] = useState<"laporan" | "siswa">("laporan");
+
+  // State Laporan
   const [laporanList, setLaporanList] = useState<Laporan[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("semua");
   const [selectedKategori, setSelectedKategori] = useState<string>("semua");
 
-  // State untuk modal detail laporan
+  // State Modal Detail Laporan
   const [activeLaporan, setActiveLaporan] = useState<Laporan | null>(null);
   const [balasanPesan, setBalasanPesan] = useState("");
   const [isSendingBalasan, setIsSendingBalasan] = useState(false);
 
+  // State Siswa
+  const [students, setStudents] = useState<StudentAccount[]>([]);
+  const [newSiswaNama, setNewSiswaNama] = useState("");
+  const [newSiswaNisn, setNewSiswaNisn] = useState("");
+  const [newSiswaKelas, setNewSiswaKelas] = useState("");
+  const [newSiswaPassword, setNewSiswaPassword] = useState("123456");
+  const [siswaMsg, setSiswaMsg] = useState<string | null>(null);
+
   // Muat data awal
   const loadData = () => {
-    const list = LaporanService.getAll();
-    setLaporanList(list);
+    setLaporanList(LaporanService.getAll());
+    setStudents(StudentService.getAll());
   };
 
   useEffect(() => {
@@ -79,13 +95,42 @@ export default function AdminDashboardPage() {
     setBalasanPesan("");
     loadData();
 
-    // Perbarui activeLaporan agar balasan langsung terlihat di modal
     const updated = LaporanService.getByKode(activeLaporan.kode_pelacak);
     if (updated) setActiveLaporan(updated);
     setIsSendingBalasan(false);
   };
 
-  // Filter list
+  // Tambah akun siswa baru
+  const handleTambahSiswa = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSiswaNama.trim() || !newSiswaNisn.trim() || !newSiswaKelas.trim()) return;
+
+    StudentService.create({
+      nama: newSiswaNama,
+      nisn: newSiswaNisn,
+      kelas: newSiswaKelas,
+      password: newSiswaPassword || "123456",
+    });
+
+    setSiswaMsg(`Siswa "${newSiswaNama}" (NISN: ${newSiswaNisn}) berhasil didaftarkan!`);
+    setNewSiswaNama("");
+    setNewSiswaNisn("");
+    setNewSiswaKelas("");
+    setNewSiswaPassword("123456");
+    loadData();
+
+    setTimeout(() => setSiswaMsg(null), 4000);
+  };
+
+  // Hapus akun siswa
+  const handleHapusSiswa = (id: string, nama: string) => {
+    if (confirm(`Apakah Anda yakin ingin menghapus akun siswa "${nama}"?`)) {
+      StudentService.delete(id);
+      loadData();
+    }
+  };
+
+  // Filter laporan
   const filteredList = laporanList.filter((item) => {
     const matchQuery =
       item.kode_pelacak.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -118,14 +163,14 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-400 text-stone-950 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-5 h-5" />
+              <ShieldCheck className="w-5 h-5 text-stone-950" />
             </div>
             <div>
               <div className="text-sm font-black flex items-center gap-2">
                 SafeReport <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">PORTAL BK</span>
               </div>
               <div className="text-[11px] text-stone-400">
-                {admin.nama} • {admin.nisn_kelas || "Staf Bimbingan Konseling"}
+                {admin.nama} • {admin.nisn_kelas || "Staf Guru BK"}
               </div>
             </div>
           </div>
@@ -136,11 +181,11 @@ export default function AdminDashboardPage() {
               target="_blank"
               className="hidden sm:inline-flex items-center gap-1.5 text-xs text-stone-300 hover:text-amber-300 font-semibold transition-colors"
             >
-              Lihat Portal Siswa <ExternalLink className="w-3.5 h-3.5" />
+              Lihat Halaman Pengaduan <ExternalLink className="w-3.5 h-3.5" />
             </Link>
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-rose-900/50 hover:text-rose-300 text-stone-300 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-rose-900/50 hover:text-rose-300 text-stone-300 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" /> Keluar
             </button>
@@ -150,173 +195,336 @@ export default function AdminDashboardPage() {
 
       {/* Konten Dashboard */}
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
-        {/* Kartu Ringkasan Metrik */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="card p-4 sm:p-5 border-l-4 border-l-stone-700">
-            <div className="text-xs text-stone-500 font-bold uppercase tracking-wider">Total Laporan</div>
-            <div className="text-2xl sm:text-3xl font-black text-stone-900 mt-1">{countTotal}</div>
-          </div>
-          <div className="card p-4 sm:p-5 border-l-4 border-l-rose-500 bg-rose-50/30">
-            <div className="text-xs text-rose-700 font-bold uppercase tracking-wider">Perlu Ditinjau (Baru)</div>
-            <div className="text-2xl sm:text-3xl font-black text-rose-600 mt-1">{countBaru}</div>
-          </div>
-          <div className="card p-4 sm:p-5 border-l-4 border-l-blue-500 bg-blue-50/30">
-            <div className="text-xs text-blue-700 font-bold uppercase tracking-wider">Sedang Diproses</div>
-            <div className="text-2xl sm:text-3xl font-black text-blue-600 mt-1">{countProses}</div>
-          </div>
-          <div className="card p-4 sm:p-5 border-l-4 border-l-emerald-500 bg-emerald-50/30">
-            <div className="text-xs text-emerald-700 font-bold uppercase tracking-wider">Terselesaikan</div>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">{countSelesai}</div>
-          </div>
+        {/* Tab Navigasi: Laporan vs Kelola Akun Siswa */}
+        <div className="flex items-center gap-3 border-b border-stone-200 pb-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("laporan")}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === "laporan"
+                ? "bg-amber-400 text-stone-950 shadow-sm"
+                : "bg-white text-stone-600 hover:bg-stone-50"
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            Daftar Pengaduan ({laporanList.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("siswa")}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === "siswa"
+                ? "bg-amber-400 text-stone-950 shadow-sm"
+                : "bg-white text-stone-600 hover:bg-stone-50"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Kelola Akun Siswa ({students.length})
+          </button>
         </div>
 
-        {/* Bar Filter & Pencarian */}
-        <div className="card p-4 flex flex-col md:flex-row items-center gap-3">
-          {/* Input Pencarian */}
-          <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Cari kode tiket, lokasi, pelaku, nama pelapor..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
+        {/* TAB 1: DAFTAR PENGADUAN */}
+        {activeTab === "laporan" && (
+          <div className="space-y-6">
+            {/* Metrik Ringkas */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="card p-4 sm:p-5 border-l-4 border-l-stone-700">
+                <div className="text-[11px] text-stone-500 font-bold uppercase tracking-wider">Total Laporan</div>
+                <div className="text-2xl sm:text-3xl font-black text-stone-900 mt-1">{countTotal}</div>
+              </div>
+              <div className="card p-4 sm:p-5 border-l-4 border-l-rose-500 bg-rose-50/30">
+                <div className="text-[11px] text-rose-700 font-bold uppercase tracking-wider">Perlu Ditinjau (Baru)</div>
+                <div className="text-2xl sm:text-3xl font-black text-rose-600 mt-1">{countBaru}</div>
+              </div>
+              <div className="card p-4 sm:p-5 border-l-4 border-l-blue-500 bg-blue-50/30">
+                <div className="text-[11px] text-blue-700 font-bold uppercase tracking-wider">Sedang Diproses</div>
+                <div className="text-2xl sm:text-3xl font-black text-blue-600 mt-1">{countProses}</div>
+              </div>
+              <div className="card p-4 sm:p-5 border-l-4 border-l-emerald-500 bg-emerald-50/30">
+                <div className="text-[11px] text-emerald-700 font-bold uppercase tracking-wider">Terselesaikan</div>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">{countSelesai}</div>
+              </div>
+            </div>
+
+            {/* Filter & Pencarian */}
+            <div className="card p-4 flex flex-col md:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Cari kode tiket, lokasi, pelaku, isi aduan..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <Filter className="w-4 h-4 text-stone-400 shrink-0" />
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                  <option value="semua">Semua Status</option>
+                  <option value="baru">Baru</option>
+                  <option value="diverifikasi">Diverifikasi</option>
+                  <option value="diproses">Diproses</option>
+                  <option value="selesai">Selesai</option>
+                </select>
+
+                <select
+                  value={selectedKategori}
+                  onChange={(e) => setSelectedKategori(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                  <option value="semua">Semua Kategori</option>
+                  <option value="verbal">Verbal</option>
+                  <option value="fisik">Fisik</option>
+                  <option value="cyber">Cyberbullying</option>
+                  <option value="psikologis">Psikologis</option>
+                  <option value="sosial">Sosial</option>
+                  <option value="lainnya">Lainnya</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Tabel Laporan Pengaduan */}
+            <div className="card overflow-hidden">
+              <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+                <h2 className="font-extrabold text-stone-800 text-sm sm:text-base">
+                  Daftar Masuk Pengaduan ({filteredList.length})
+                </h2>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead className="bg-stone-50 text-stone-500 font-bold uppercase tracking-wider text-[11px] border-b border-stone-100">
+                    <tr>
+                      <th className="py-3 px-4">Kode Tiket</th>
+                      <th className="py-3 px-4">Tgl & Kategori</th>
+                      <th className="py-3 px-4">Pelapor</th>
+                      <th className="py-3 px-4">Pelaku / Lokasi</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Tindakan BK</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {filteredList.map((item) => (
+                      <tr key={item.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="py-3.5 px-4 font-mono font-black text-amber-700">
+                          {item.kode_pelacak}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-stone-900 capitalize">
+                            {item.kategori}
+                          </div>
+                          <div className="text-[11px] text-stone-400">
+                            {formatTanggal(item.tanggal_kejadian)}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {item.is_anonim ? (
+                            <span className="inline-flex items-center gap-1 text-stone-500 font-medium text-xs">
+                              <UserX className="w-3.5 h-3.5 text-stone-400" /> Anonim ({item.peran_pelapor})
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-amber-900 font-semibold text-xs">
+                              <User className="w-3.5 h-3.5 text-amber-600" /> {item.nama_pelapor}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="text-stone-800 font-medium truncate max-w-[180px]">
+                            {item.nama_pelaku || "Tidak disebutkan"}
+                          </div>
+                          <div className="text-[11px] text-stone-400 truncate max-w-[180px]">
+                            {item.lokasi}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                              item.status === "baru"
+                                ? "badge-baru"
+                                : item.status === "diverifikasi"
+                                ? "badge-verifikasi"
+                                : item.status === "diproses"
+                                ? "badge-proses"
+                                : "badge-selesai"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => setActiveLaporan(item)}
+                            className="btn-primary text-xs px-3 py-1.5 font-bold"
+                          >
+                            Kelola Kasus <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {filteredList.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-stone-400 text-xs">
+                          <Inbox className="w-8 h-8 text-stone-300 mx-auto mb-2" />
+                          Belum ada laporan pengaduan yang masuk.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
+        )}
 
-          {/* Filter Status */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <Filter className="w-4 h-4 text-stone-400 shrink-0" />
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <option value="semua">Semua Status</option>
-              <option value="baru">Baru</option>
-              <option value="diverifikasi">Diverifikasi</option>
-              <option value="diproses">Diproses</option>
-              <option value="selesai">Selesai</option>
-            </select>
+        {/* TAB 2: KELOLA AKUN SISWA (Dibuat oleh Guru BK) */}
+        {activeTab === "siswa" && (
+          <div className="space-y-6">
+            {/* Form Tambah Siswa */}
+            <div className="card p-6 border border-amber-200/90 bg-white">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-amber-400 text-stone-900 flex items-center justify-center font-bold">
+                  <UserPlus className="w-5 h-5 text-stone-900" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-stone-900">
+                    Tambah Akun Siswa Baru
+                  </h2>
+                  <p className="text-xs text-stone-500">
+                    Siswa yang didaftarkan dapat masuk ke portal siswa menggunakan NISN dan PIN untuk melihat laporan akun mereka.
+                  </p>
+                </div>
+              </div>
 
-            {/* Filter Kategori */}
-            <select
-              value={selectedKategori}
-              onChange={(e) => setSelectedKategori(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-stone-200 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <option value="semua">Semua Kategori</option>
-              <option value="verbal">Verbal</option>
-              <option value="fisik">Fisik</option>
-              <option value="cyber">Cyberbullying</option>
-              <option value="psikologis">Psikologis</option>
-              <option value="sosial">Sosial</option>
-              <option value="lainnya">Lainnya</option>
-            </select>
+              {siswaMsg && (
+                <div className="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{siswaMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleTambahSiswa} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                <div>
+                  <label className="form-label text-xs">Nama Lengkap Siswa</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Budi Pratama"
+                    value={newSiswaNama}
+                    onChange={(e) => setNewSiswaNama(e.target.value)}
+                    className="input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">NISN</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 007234901"
+                    value={newSiswaNisn}
+                    onChange={(e) => setNewSiswaNisn(e.target.value)}
+                    className="input text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Kelas</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: XI IPA 2"
+                    value={newSiswaKelas}
+                    onChange={(e) => setNewSiswaKelas(e.target.value)}
+                    className="input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Kata Sandi / PIN Awal</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="123456"
+                      value={newSiswaPassword}
+                      onChange={(e) => setNewSiswaPassword(e.target.value)}
+                      className="input text-xs font-mono"
+                    />
+                    <button type="submit" className="btn-primary text-xs px-4 py-2 shrink-0 font-bold">
+                      <UserPlus className="w-3.5 h-3.5" /> Daftarkan
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Tabel Daftar Siswa */}
+            <div className="card overflow-hidden">
+              <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+                <h3 className="font-extrabold text-stone-800 text-sm">
+                  Daftar Siswa Terdaftar ({students.length})
+                </h3>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead className="bg-stone-50 text-stone-500 font-bold uppercase tracking-wider text-[11px] border-b border-stone-100">
+                    <tr>
+                      <th className="py-3 px-4">Nama Siswa</th>
+                      <th className="py-3 px-4">NISN</th>
+                      <th className="py-3 px-4">Kelas</th>
+                      <th className="py-3 px-4">PIN / Kata Sandi</th>
+                      <th className="py-3 px-4">Terdaftar Sejak</th>
+                      <th className="py-3 px-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {students.map((st) => (
+                      <tr key={st.id} className="hover:bg-amber-50/30 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-stone-900">
+                          {st.nama}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-semibold text-amber-800">
+                          {st.nisn}
+                        </td>
+                        <td className="py-3.5 px-4 text-stone-700">
+                          {st.kelas}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-stone-500">
+                          {st.password || "123456"}
+                        </td>
+                        <td className="py-3.5 px-4 text-stone-400 text-xs">
+                          {formatTanggal(st.created_at)}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => handleHapusSiswa(st.id, st.nama)}
+                            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Hapus akun siswa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {students.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-10 text-center text-stone-400 text-xs">
+                          Belum ada akun siswa. Silakan tambahkan siswa di formulir atas.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Tabel / List Pengaduan */}
-        <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
-            <h2 className="font-extrabold text-stone-800 text-sm sm:text-base">
-              Daftar Pengaduan Siswa ({filteredList.length})
-            </h2>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-stone-50 text-stone-500 font-bold uppercase tracking-wider text-[11px] border-b border-stone-100">
-                <tr>
-                  <th className="py-3 px-4">Kode Tiket</th>
-                  <th className="py-3 px-4">Tgl & Kategori</th>
-                  <th className="py-3 px-4">Pelapor</th>
-                  <th className="py-3 px-4">Pelaku / Lokasi</th>
-                  <th className="py-3 px-4">Status Kasus</th>
-                  <th className="py-3 px-4 text-right">Aksi BK</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {filteredList.map((item) => (
-                  <tr key={item.id} className="hover:bg-amber-50/40 transition-colors">
-                    {/* Kode Tiket */}
-                    <td className="py-3.5 px-4 font-mono font-black text-amber-600">
-                      {item.kode_pelacak}
-                    </td>
-
-                    {/* Tgl & Kategori */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-stone-800 capitalize">
-                        {item.kategori}
-                      </div>
-                      <div className="text-[11px] text-stone-400">
-                        {formatTanggal(item.tanggal_kejadian)}
-                      </div>
-                    </td>
-
-                    {/* Pelapor */}
-                    <td className="py-3.5 px-4">
-                      {item.is_anonim ? (
-                        <span className="inline-flex items-center gap-1 text-stone-500 font-medium text-xs">
-                          <UserX className="w-3.5 h-3.5 text-stone-400" /> Anonim ({item.peran_pelapor})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-blue-700 font-semibold text-xs">
-                          <User className="w-3.5 h-3.5 text-blue-500" /> {item.nama_pelapor}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Pelaku / Lokasi */}
-                    <td className="py-3.5 px-4">
-                      <div className="text-stone-800 font-medium truncate max-w-[180px]">
-                        {item.nama_pelaku || "Tidak disebutkan"}
-                      </div>
-                      <div className="text-[11px] text-stone-400 truncate max-w-[180px]">
-                        📍 {item.lokasi}
-                      </div>
-                    </td>
-
-                    {/* Status Kasus */}
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-                          item.status === "baru"
-                            ? "badge-baru"
-                            : item.status === "diverifikasi"
-                            ? "badge-verifikasi"
-                            : item.status === "diproses"
-                            ? "badge-proses"
-                            : "badge-selesai"
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-
-                    {/* Aksi */}
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => setActiveLaporan(item)}
-                        className="btn-primary text-xs px-3 py-1.5"
-                      >
-                        Kelola Kasus <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-
-                {filteredList.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-stone-400 text-xs">
-                      Tidak ada laporan yang sesuai dengan filter pencarian.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        )}
       </main>
 
       {/* Modal Detail & Manajemen Kasus BK */}
@@ -327,15 +535,15 @@ export default function AdminDashboardPage() {
             <div className="px-6 py-4 bg-stone-900 text-white flex items-center justify-between">
               <div>
                 <div className="text-[11px] font-mono text-amber-400 font-bold uppercase">
-                  Detail Laporan • {activeLaporan.kode_pelacak}
+                  Detail Pengaduan • {activeLaporan.kode_pelacak}
                 </div>
-                <h3 className="text-lg font-black text-white">
-                  Bullying {activeLaporan.kategori} di {activeLaporan.lokasi}
+                <h3 className="text-base sm:text-lg font-black text-white">
+                  Perundungan {activeLaporan.kategori} di {activeLaporan.lokasi}
                 </h3>
               </div>
               <button
                 onClick={() => setActiveLaporan(null)}
-                className="p-1 rounded-lg text-stone-400 hover:text-white transition-colors"
+                className="p-1 rounded-lg text-stone-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -344,28 +552,28 @@ export default function AdminDashboardPage() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-5 text-xs sm:text-sm">
               {/* Box Info Identitas & Status */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-50/60 border border-amber-200">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
                 <div>
-                  <span className="text-stone-400 block text-[11px]">Pelapor</span>
-                  <strong className="text-stone-800">
-                    {activeLaporan.is_anonim ? "Anonim (Privasi Terjaga)" : activeLaporan.nama_pelapor}
+                  <span className="text-stone-400 block text-[11px]">Identitas Pelapor</span>
+                  <strong className="text-stone-900">
+                    {activeLaporan.is_anonim ? "100% Anonim" : activeLaporan.nama_pelapor}
                   </strong>
                 </div>
                 <div>
                   <span className="text-stone-400 block text-[11px]">Peran</span>
-                  <strong className="text-stone-800 capitalize">
+                  <strong className="text-stone-900 capitalize">
                     {activeLaporan.peran_pelapor}
                   </strong>
                 </div>
                 <div>
                   <span className="text-stone-400 block text-[11px]">Tanggal Kejadian</span>
-                  <strong className="text-stone-800">
+                  <strong className="text-stone-900">
                     {formatTanggal(activeLaporan.tanggal_kejadian)}
                   </strong>
                 </div>
                 <div>
                   <span className="text-stone-400 block text-[11px]">Terduga Pelaku</span>
-                  <strong className="text-stone-800">
+                  <strong className="text-stone-900">
                     {activeLaporan.nama_pelaku || "-"}
                   </strong>
                 </div>
@@ -377,18 +585,18 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <span className="text-stone-400 block text-[11px]">Status Saat Ini</span>
-                  <span className="font-extrabold text-stone-800 uppercase">
+                  <span className="font-black text-stone-900 uppercase">
                     {activeLaporan.status}
                   </span>
                 </div>
               </div>
 
-              {/* Deskripsi Lengkap */}
+              {/* Deskripsi Kronologi */}
               <div>
-                <label className="font-bold text-stone-700 block mb-1">
-                  Kronologi / Cerita Kejadian:
+                <label className="font-bold text-stone-800 block mb-1">
+                  Kronologi / Cerita Pengaduan:
                 </label>
-                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-stone-800 whitespace-pre-wrap leading-relaxed">
+                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-stone-800 whitespace-pre-wrap leading-relaxed text-xs sm:text-sm">
                   {activeLaporan.deskripsi}
                 </div>
               </div>
@@ -396,8 +604,8 @@ export default function AdminDashboardPage() {
               {/* Bukti Lampiran */}
               {activeLaporan.bukti && activeLaporan.bukti.length > 0 && (
                 <div>
-                  <label className="font-bold text-stone-700 block mb-1">
-                    Bukti File ({activeLaporan.bukti.length}):
+                  <label className="font-bold text-stone-800 block mb-1">
+                    Bukti Lampiran ({activeLaporan.bukti.length}):
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {activeLaporan.bukti.map((b) => (
@@ -408,7 +616,7 @@ export default function AdminDashboardPage() {
                             href={b.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-amber-600 font-bold text-xs hover:underline shrink-0 ml-2"
+                            className="text-amber-700 font-bold text-xs hover:underline shrink-0 ml-2"
                           >
                             Buka Bukti
                           </a>
@@ -419,10 +627,10 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* Ubah Status Laporan */}
+              {/* Ubah Status Kasus */}
               <div className="pt-3 border-t border-stone-100">
                 <label className="font-bold text-stone-800 block mb-2">
-                  Update Tahap Status Laporan:
+                  Update Tahap Penanganan Kasus:
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(["baru", "diverifikasi", "diproses", "selesai"] as StatusLaporan[]).map((st) => (
@@ -432,7 +640,7 @@ export default function AdminDashboardPage() {
                       onClick={() => handleChangeStatus(activeLaporan.id, st)}
                       className={`py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                         activeLaporan.status === st
-                          ? "bg-amber-400 text-stone-950 shadow-sm"
+                          ? "bg-amber-400 text-stone-950 shadow-xs"
                           : "bg-stone-100 hover:bg-stone-200 text-stone-600"
                       }`}
                     >
@@ -442,10 +650,10 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Feed Tindak Lanjut & Form Kirim Balasan */}
+              {/* Riwayat & Kirim Balasan BK */}
               <div className="pt-3 border-t border-stone-100 space-y-3">
                 <label className="font-bold text-stone-800 block">
-                  Riwayat Balasan & Pendampingan BK:
+                  Riwayat Balasan & Pendampingan Guru BK:
                 </label>
 
                 {activeLaporan.tindak_lanjut && activeLaporan.tindak_lanjut.length > 0 ? (
@@ -456,7 +664,7 @@ export default function AdminDashboardPage() {
                           <strong className="text-amber-800">{tl.oleh_nama}</strong>
                           <span>{formatTanggalWaktu(tl.created_at)}</span>
                         </div>
-                        <p className="text-stone-700">{tl.pesan}</p>
+                        <p className="text-stone-800">{tl.pesan}</p>
                       </div>
                     ))}
                   </div>
@@ -464,11 +672,11 @@ export default function AdminDashboardPage() {
                   <p className="text-xs text-stone-400 italic">Belum ada catatan tindak lanjut.</p>
                 )}
 
-                {/* Form Kirim Balasan Baru */}
+                {/* Form Kirim Balasan */}
                 <form onSubmit={handleKirimBalasan} className="space-y-2">
                   <textarea
                     rows={3}
-                    placeholder="Tulis balasan / catatan penanganan kasus untuk pelapor (bisa dilihat oleh pelapor menggunakan kode tiket)..."
+                    placeholder="Tulis balasan atau tindak lanjut dari Guru BK untuk pelapor (bisa dibaca siswa melalui kode tiket pelacak)..."
                     value={balasanPesan}
                     onChange={(e) => setBalasanPesan(e.target.value)}
                     className="w-full p-3 rounded-2xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
@@ -477,7 +685,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="submit"
                       disabled={isSendingBalasan || !balasanPesan.trim()}
-                      className="btn-primary text-xs px-4 py-2 disabled:opacity-50"
+                      className="btn-primary text-xs px-4 py-2 disabled:opacity-50 font-bold"
                     >
                       <Send className="w-3.5 h-3.5" /> Kirim Balasan ke Siswa
                     </button>
@@ -491,9 +699,9 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={() => setActiveLaporan(null)}
-                className="btn-secondary text-xs px-4 py-2"
+                className="btn-secondary text-xs px-4 py-2 font-bold cursor-pointer"
               >
-                Tutup Jendela
+                Tutup
               </button>
             </div>
           </div>

@@ -25,13 +25,33 @@ export type StatusLaporan =
 // Role pengguna
 export type UserRole = "siswa" | "admin";
 
-// Data profil pengguna (siswa atau admin)
+// Data profil pengguna (siswa atau admin dalam sesi aktif)
 export interface Profile {
   id: string;
   nama: string;
-  nisn_kelas?: string; // NISN dan kelas, misal "0012345678 - XI IPA 2"
+  nisn_kelas?: string;
   email?: string;
   role: UserRole;
+  created_at: string;
+}
+
+// Data akun siswa (dibuat & dikelola oleh Guru BK di admin)
+export interface StudentAccount {
+  id: string;
+  nisn: string;
+  nama: string;
+  kelas: string;
+  password?: string;
+  created_at: string;
+}
+
+// Data akun admin / Guru BK
+export interface AdminAccount {
+  id: string;
+  nama: string;
+  email: string;
+  password?: string;
+  nip_jabatan?: string;
   created_at: string;
 }
 
@@ -39,7 +59,7 @@ export interface Profile {
 export interface BuktiFile {
   id: string;
   nama_file: string;
-  url: string;        // bisa berupa data:URL (lokal) atau URL Supabase Storage
+  url: string;        // data:URL (lokal) atau URL Supabase Storage
   tipe_file?: string;
   ukuran_byte?: number;
 }
@@ -57,11 +77,11 @@ export interface TindakLanjut {
 // Data laporan pengaduan
 export interface Laporan {
   id: string;
-  kode_pelacak: string;       // misal "SF-8K9P", dipakai pelapor untuk cek status
+  kode_pelacak: string;       // contoh: "SF-8K9P"
   is_anonim: boolean;
   pelapor_id?: string | null;
   nama_pelapor?: string | null;
-  kontak_opsional?: string | null; // No WA/email privat (opsional diisi pelapor)
+  kontak_opsional?: string | null;
   peran_pelapor: PeranPelapor;
   kategori: KategoriBullying;
   nama_pelaku?: string | null;

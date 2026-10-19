@@ -8,12 +8,11 @@ import {
   ShieldCheck,
   AlertCircle,
   Clock,
-  MapPin,
-  Calendar,
-  MessageSquare,
   ArrowLeft,
-  CheckCircle2,
-  HelpCircle,
+  MessageSquare,
+  FileText,
+  Calendar,
+  MapPin,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -47,28 +46,28 @@ function StatusContent() {
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 py-8">
-      {/* Tombol Kembali */}
+      {/* Tombol Kembali ke Form Laporan */}
       <div className="mb-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-600 text-sm font-semibold transition-colors"
+          className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-700 text-xs sm:text-sm font-semibold transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Kembali ke Beranda
+          <ArrowLeft className="w-4 h-4" /> Kembali ke Formulir Pengaduan
         </Link>
       </div>
 
-      {/* Header & Kotak Pencarian */}
-      <div className="card p-6 sm:p-8 mb-6 bg-gradient-to-br from-white via-amber-50/50 to-white">
+      {/* Header & Kotak Pencarian Tiket */}
+      <div className="card p-6 sm:p-8 mb-6 border border-amber-200/90 bg-gradient-to-br from-white via-amber-50/50 to-white shadow-xs">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-400 text-stone-900 flex items-center justify-center shadow-sm shadow-amber-200">
+          <div className="w-11 h-11 rounded-2xl bg-amber-400 text-stone-900 flex items-center justify-center shadow-xs">
             <Search className="w-6 h-6 text-stone-900" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-stone-900">
-              Lacak Status Laporan
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900">
+              Lacak Status Pengaduan
             </h1>
-            <p className="text-xs text-stone-500">
-              Pantau proses tindak lanjut laporanmu menggunakan Kode Tiket unik.
+            <p className="text-xs text-stone-500 mt-0.5">
+              Masukkan Kode Tiket unik yang kamu terima setelah mengirim laporan.
             </p>
           </div>
         </div>
@@ -84,32 +83,17 @@ function StatusContent() {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="Contoh: SF-7K2X"
+              placeholder="Masukkan Kode Tiket (Contoh: SF-XXXX)"
               value={inputKode}
               onChange={(e) => setInputKode(e.target.value.toUpperCase())}
-              className="input uppercase font-mono tracking-wider font-bold text-base pl-11"
+              className="input uppercase font-mono tracking-wider font-bold text-sm sm:text-base pl-11"
             />
-            <Search className="w-5 h-5 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2" />
           </div>
-          <button type="submit" className="btn-primary sm:w-auto px-7 py-3">
+          <button type="submit" className="btn-primary sm:w-auto px-7 py-3 text-xs sm:text-sm font-bold">
             Cek Status
           </button>
         </form>
-
-        {/* Saran Tiket Demo */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-stone-500">
-          <span className="font-semibold text-stone-600">Coba Tiket Demo:</span>
-          {["SF-7K2X", "SF-9M3A", "SF-4P8Z"].map((demoCode) => (
-            <button
-              key={demoCode}
-              type="button"
-              onClick={() => handleSearch(demoCode)}
-              className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-mono font-bold transition-colors cursor-pointer"
-            >
-              {demoCode}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Hasil Pencarian */}
@@ -117,14 +101,14 @@ function StatusContent() {
         <>
           {laporan ? (
             <div className="space-y-6 animate-fade-in">
-              {/* Ringkasan Status Utama */}
-              <div className="card p-6 border-l-8 border-l-amber-400">
+              {/* Kartu Status Utama */}
+              <div className="card p-6 border-l-8 border-l-amber-400 border-amber-200/80 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-amber-100">
                   <div>
-                    <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block">
-                      Kode Pelacak
+                    <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
+                      Kode Tiket Pelacak
                     </span>
-                    <span className="text-2xl font-extrabold font-mono text-amber-600">
+                    <span className="text-2xl font-black font-mono text-amber-600">
                       {laporan.kode_pelacak}
                     </span>
                   </div>
@@ -147,26 +131,26 @@ function StatusContent() {
 
                 {/* Detail Singkat Laporan */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
-                    <span className="text-stone-400 block mb-0.5">Kategori</span>
+                  <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-100">
+                    <span className="text-stone-400 block mb-0.5 text-[11px]">Kategori</span>
                     <strong className="text-stone-800 capitalize">
                       {laporan.kategori}
                     </strong>
                   </div>
-                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
-                    <span className="text-stone-400 block mb-0.5">Peran Pelapor</span>
+                  <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-100">
+                    <span className="text-stone-400 block mb-0.5 text-[11px]">Peran Pelapor</span>
                     <strong className="text-stone-800 capitalize">
                       {laporan.peran_pelapor}
                     </strong>
                   </div>
-                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
-                    <span className="text-stone-400 block mb-0.5">Tanggal Kejadian</span>
+                  <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-100">
+                    <span className="text-stone-400 block mb-0.5 text-[11px]">Tanggal Kejadian</span>
                     <strong className="text-stone-800">
                       {formatTanggal(laporan.tanggal_kejadian)}
                     </strong>
                   </div>
-                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
-                    <span className="text-stone-400 block mb-0.5">Lokasi</span>
+                  <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-100">
+                    <span className="text-stone-400 block mb-0.5 text-[11px]">Lokasi</span>
                     <strong className="text-stone-800 truncate block">
                       {laporan.lokasi}
                     </strong>
@@ -174,20 +158,20 @@ function StatusContent() {
                 </div>
               </div>
 
-              {/* Timeline Progres */}
-              <div className="card p-6">
-                <h3 className="font-extrabold text-stone-900 text-base mb-4 flex items-center gap-2">
+              {/* Alur Timeline Penanganan */}
+              <div className="card p-6 border-amber-200/80 shadow-xs">
+                <h3 className="font-extrabold text-stone-900 text-sm sm:text-base mb-4 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-amber-500" />
-                  Alur Penanganan Laporan
+                  Alur Penanganan Kasus
                 </h3>
                 <TimelineStatus status={laporan.status} />
               </div>
 
-              {/* Tanggapan & Pesan dari Guru BK */}
-              <div className="card p-6 bg-gradient-to-br from-white to-amber-50/40">
-                <h3 className="font-extrabold text-stone-900 text-base mb-4 flex items-center gap-2">
+              {/* Tanggapan & Catatan Guru BK */}
+              <div className="card p-6 border-amber-200/80 bg-gradient-to-br from-white to-amber-50/40 shadow-xs">
+                <h3 className="font-extrabold text-stone-900 text-sm sm:text-base mb-4 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-amber-500" />
-                  Tanggapan & Catatan Guru BK
+                  Tanggapan & Pendampingan Guru BK
                 </h3>
 
                 {laporan.tindak_lanjut && laporan.tindak_lanjut.length > 0 ? (
@@ -197,7 +181,7 @@ function StatusContent() {
                       .map((tl) => (
                         <div
                           key={tl.id}
-                          className="p-4 rounded-2xl bg-white border border-amber-200 shadow-sm"
+                          className="p-4 rounded-2xl bg-white border border-amber-200 shadow-xs"
                         >
                           <div className="flex items-center justify-between text-xs text-stone-500 mb-2 pb-1.5 border-b border-amber-50">
                             <span className="font-bold text-amber-800">
@@ -205,27 +189,27 @@ function StatusContent() {
                             </span>
                             <span>{formatTanggalWaktu(tl.created_at)}</span>
                           </div>
-                          <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">
+                          <p className="text-stone-700 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
                             {tl.pesan}
                           </p>
                         </div>
                       ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-stone-500 italic">
-                    Belum ada catatan baru dari Guru BK. Pantau terus status tiketmu secara berkala.
+                  <p className="text-xs text-stone-500 italic">
+                    Belum ada catatan baru dari Guru BK. Laporanmu sudah tersimpan aman di sistem.
                   </p>
                 )}
               </div>
             </div>
           ) : (
-            <div className="card p-8 text-center bg-rose-50/60 border border-rose-200 animate-fade-in">
+            <div className="card p-8 text-center bg-rose-50/70 border border-rose-200 animate-fade-in">
               <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-2" />
-              <h3 className="text-lg font-bold text-rose-900 mb-1">
+              <h3 className="text-base font-bold text-rose-900 mb-1">
                 Kode Tiket Tidak Ditemukan
               </h3>
-              <p className="text-sm text-rose-700 max-w-md mx-auto">
-                Pastikan kode tiket yang kamu masukkan sudah benar (contoh: <code>SF-7K2X</code>). Kode bersifat peka terhadap huruf dan angka.
+              <p className="text-xs sm:text-sm text-rose-700 max-w-md mx-auto leading-relaxed">
+                Pastikan kode tiket yang kamu masukkan sesuai dengan yang diberikan saat mengirim aduan (contoh: <code>SF-XXXX</code>).
               </p>
             </div>
           )}
@@ -237,12 +221,12 @@ function StatusContent() {
 
 export default function StatusPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-amber-50/60">
+    <div className="min-h-screen flex flex-col bg-amber-50/50">
       <Navbar />
       <main className="flex-1">
         <Suspense
           fallback={
-            <div className="max-w-3xl mx-auto w-full px-4 py-16 text-center text-stone-500">
+            <div className="max-w-3xl mx-auto w-full px-4 py-16 text-center text-stone-500 text-xs">
               Memuat data pelacakan...
             </div>
           }
