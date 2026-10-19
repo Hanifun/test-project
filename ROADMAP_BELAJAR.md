@@ -6,11 +6,11 @@
 ## 🗺️ Daftar Centang (Checklist) Tahapan Belajar & Koding
 
 ### 📦 TAHAP 1: Setup Git & Hubungkan ke GitHub
-- [ ] Inisialisasi Git lokal (`git init`).
-- [ ] Membuat file `.gitignore` agar file sampah dan rahasia tidak bocor.
-- [ ] Menentukan nama dan email pengguna di Git.
-- [ ] Melakukan `commit` pertama (dokumen perencanaan & roadmap).
-- [ ] Membuat repositori di akun GitHub Anda dan menghubungkannya (`git remote add origin`).
+- [x] Inisialisasi Git lokal (`git init`).
+- [x] Membuat file `.gitignore` agar file sampah dan rahasia tidak bocor.
+- [x] Menentukan nama dan email pengguna di Git (`Hanifun <dakhilullah0@gmail.com>`).
+- [x] Melakukan `commit` pertama (dokumen perencanaan & roadmap).
+- [ ] Menghubungkan repositori GitHub (`test-project`).
 - [ ] Melakukan `git push` pertama ke GitHub.
 
 ---
