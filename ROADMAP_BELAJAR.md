@@ -10,8 +10,8 @@
 - [x] Membuat file `.gitignore` agar file sampah dan rahasia tidak bocor.
 - [x] Menentukan nama dan email pengguna di Git (`Hanifun <dakhilullah0@gmail.com>`).
 - [x] Melakukan `commit` pertama (dokumen perencanaan & roadmap).
-- [ ] Menghubungkan repositori GitHub (`test-project`).
-- [ ] Melakukan `git push` pertama ke GitHub.
+- [x] Menghubungkan repositori GitHub (`https://github.com/Hanifun/test-project.git`).
+- [x] Melakukan `git push` pertama ke GitHub.
 
 ---
 
