@@ -1,96 +1,144 @@
-# 🎒 Roadmap Belajar & Pengerjaan: SafeReport
-> **Pendekatan**: Belajar bertahap dari nol (Pair Programming), dibahas langkah demi langkah, desain minimalis & playful (sentuhan kuning hangat yang ramah siswa), hingga berhasil online di Vercel dengan database Supabase.
+# 📚 ROADMAP & PANDUAN LENGKAP PROYEK SAFEREPORT
+> **Sistem Pengaduan Bullying Sekolah & Kelas — Aman, Anonim, Ceria & Terpercaya**  
+> *Warna Identitas:* **Kuning Hangat / Amber (#f59e0b)**  
+> *Prinsip Utama:* **Zero-Friction Anonymous First** (Siswa bisa melapor tanpa hambatan login)
 
 ---
 
-## 🗺️ Daftar Centang (Checklist) Tahapan Belajar & Koding
+## 📌 Status Pengerjaan (Semua Tahap Selesai!)
 
-### 📦 TAHAP 1: Setup Git & Hubungkan ke GitHub
-- [x] Inisialisasi Git lokal (`git init`).
-- [x] Membuat file `.gitignore` agar file sampah dan rahasia tidak bocor.
-- [x] Menentukan nama dan email pengguna di Git (`Hanifun <dakhilullah0@gmail.com>`).
-- [x] Melakukan `commit` pertama (dokumen perencanaan & roadmap).
-- [x] Menghubungkan repositori GitHub (`https://github.com/Hanifun/test-project.git`).
-- [x] Melakukan `git push` pertama ke GitHub.
+- [x] **Tahap 1: Setup Dasar & Git Version Control**
+  - [x] Inisialisasi Git lokal (`git init`) dan remote GitHub (`https://github.com/Hanifun/test-project`)
+  - [x] File `.gitignore` aman (mengabaikan `node_modules`, `.next`, `.env*.local`)
+  - [x] Pengaturan proyek Next.js 15 + TypeScript + Tailwind CSS
 
----
+- [x] **Tahap 2: Sistem Desain & Konfigurasi Tema**
+  - [x] Palet warna Kuning Hangat / Amber (`brand-50` s.d. `brand-900`) di `tailwind.config.ts`
+  - [x] Styling global komponen kartu (`card`), tombol utama (`btn-primary`), tombol sekunder (`btn-secondary`), badge status di `app/globals.css`
+  - [x] Tipografi modern Google Font Inter & Nunito
 
-### ⚡ TAHAP 2: Membangun Fondasi Next.js (Langkah demi Langkah)
-- [ ] Memahami apa itu **Next.js** dan mengapa kita menggunakannya (Frontend + Backend jadi satu).
-- [ ] Membuat file konfigurasi `package.json`, `tsconfig.json`, dan `next.config.ts`.
-- [ ] Memahami konsep **App Router**: apa fungsi `app/layout.tsx` dan `app/page.tsx`.
-- [ ] Menjalankan server lokal pertama kali (`npm run dev`) dan memastikannya muncul di browser.
+- [x] **Tahap 3: Arsitektur Data & Tipe Data (Dual Engine)**
+  - [x] Definisi tipe data lengkap di `types/index.ts` (`Laporan`, `Profile`, `StatusLaporan`, `TindakLanjut`, dll.)
+  - [x] Generator kode tiket unik (contoh: `SF-7K2X`) di `lib/utils.ts`
+  - [x] Service penyimpanan data (`lib/data.ts`) dengan engine **localStorage** dan data demo interaktif siap pakai
+  - [x] Skema database cloud PostgreSQL untuk Supabase di `supabase_schema.sql`
 
----
+- [x] **Tahap 4: Halaman Publik Siswa**
+  - [x] **Beranda (`app/page.tsx`):** Hero section ceria, statistik pengaduan, kartu fitur keunggulan, alur cara pakai, tombol aksi cepat
+  - [x] **Formulir Pengaduan (`app/lapor/page.tsx`):** Pilihan peran (korban/saksi), kategori perundungan, deskripsi kronologi, upload bukti lampiran, kontak opsional
+  - [x] **Modal Tiket Sukses (`components/ModalTiket.tsx`):** Menampilkan kode pelacak unik dengan tombol 1-klik salin dan pengingat screenshot
+  - [x] **Lacak Status (`app/status/page.tsx`):** Cek progres laporan via kode tiket pelacak, visual timeline tahapan, dan pesan balasan dari Guru BK
 
-### 🎨 TAHAP 3: Pasang Tailwind CSS & Menentukan Gaya "Playful & Minimalis"
-- [ ] Memasang **Tailwind CSS** dan memahami cara kerjanya (styling cepat via class).
-- [ ] Menentukan konsep visual yang **ramah siswa, minimalis, dan playful**:
-  - Warna preferensi: **Kuning hangat / Amber / Warm Sun** (memberikan rasa aman, ceria, dan tidak menakutkan bagi siswa yang sedang tertekan).
-  - Tampilan kartu yang empuk (*rounded corners* besar, border lembut, bayangan halus).
-  - Tipografi bersih dan mudah dibaca.
-- [ ] Mengatur token warna terpusat di `app/globals.css` agar jika klien kelas ingin mengubah warna, kita tinggal ganti satu baris kode saja.
+- [x] **Tahap 5: Portal Akun Siswa**
+  - [x] **Login Siswa (`app/login/page.tsx`):** Tombol 1-klik demo masuk sebagai Budi Santoso (XI IPA 2) atau login manual
+  - [x] **Dashboard Siswa (`app/dashboard/page.tsx`):** Melihat riwayat laporan yang pernah dikirim, status terkini, dan akses buat laporan baru
 
----
+- [x] **Tahap 6: Portal Guru BK & Satgas Kesiswaan**
+  - [x] **Login Guru BK (`app/admin/login/page.tsx`):** Tombol 1-klik demo masuk sebagai Ibu Ratna, S.Pd (Koordinator BK)
+  - [x] **Dashboard Manajemen BK (`app/admin/dashboard/page.tsx`):**
+    - Ringkasan metrik (Total Kasus, Perlu Ditinjau, Sedang Diproses, Selesai)
+    - Filter berdasarkan status kasus dan kategori bullying
+    - Kolom pencarian realtime (kode tiket, lokasi, pelaku, nama)
+    - Modal kelola kasus: ubah status penanganan secara dinamis
+    - Formulir kirim balasan/catatan perkembangan kasus langsung ke siswa
 
-### 🗄️ TAHAP 4: Memahami & Merancang Database (Supabase PostgreSQL)
-- [ ] Memahami apa itu **Supabase** (Database PostgreSQL di awan yang gratis dan sangat cepat).
-- [ ] Membuat akun dan proyek baru di Supabase.
-- [ ] Merancang tabel database satu per satu:
-  - `laporan`: menyimpan pengaduan, peran (korban/saksi), kategori, kronologi, status, dan kode tiket.
-  - `bukti_laporan`: menyimpan file/foto bukti.
-  - `tindak_lanjut`: menyimpan pesan balasan resmi dari Guru BK.
-- [ ] Memahami konsep **Row Level Security (RLS)**: bagaimana privasi korban tetap terlindungi 100%.
-- [ ] Mengambil URL & API Key dari Supabase lalu menyimpannya di file `.env.local`.
-
----
-
-### 🖥️ TAHAP 5: Koding Tampilan (UI) Tahap demi Tahap
-Setiap tampilan kita koding bersama, dibahas baris demi baris:
-- [ ] **5.1. Navigasi Atas (Navbar)**:
-  - Logo SafeReport dengan maskot/ikon ramah.
-  - Badge *🎭 Mode Anonim Aktif* (agar siswa langsung merasa aman).
-  - Tombol cepat *Cek Status Tiket* & *Masuk Siswa*.
-- [ ] **5.2. Form Pengaduan Anonim di Halaman Depan (`/`)** (Sesuai Konsep V2):
-  - Kartu pilihan peran yang santai: "Saya Korban" vs "Saya Saksi".
-  - Kartu pilihan kategori perundungan (Verbal, Fisik, Siber, Sosial, dll.) dengan emoji/ikon yang ramah.
-  - Pilihan cepat lokasi (Kantin, Kelas, Lapangan, dll.).
-  - Textarea kronologi dengan teks panduan yang menenangkan.
-  - Opsi unggah bukti (foto/screenshot chat).
-- [ ] **5.3. Modal Pop-up Kode Tiket Unik**:
-  - Menampilkan kode tiket (misal: `SF-8K9P`) dengan gaya tiket lucu/playful.
-  - Tombol "Salin Kode" dan tombol langsung ke halaman cek status.
-- [ ] **5.4. Halaman Cek Status Laporan (`/status`)**:
-  - Kotak pencarian tiket yang simpel dan bersih.
-  - Timeline visual langkah penanganan: Diterima ➔ Diverifikasi ➔ Sedang Diproses ➔ Selesai.
-  - Kotak respon balasan dari Guru BK.
-- [ ] **5.5. Halaman Portal Guru BK (`/admin`)**:
-  - Login khusus Guru BK (terpisah dari siswa).
-  - Dashboard statistik kasus.
-  - Tabel kelola pengaduan: ubah status kasus & kirim pesan balasan tindak lanjut ke siswa.
+- [x] **Tahap 7: Kesiapan Publikasi Online**
+  - [x] Template Environment Variables (`.env.example`)
+  - [x] Panduan Deploy ke Vercel (Gratis & Cepat)
+  - [x] Panduan Sambung ke Supabase (Database Cloud)
 
 ---
 
-### 🔗 TAHAP 6: Menghubungkan Tampilan ke Database & Logika Bisnis
-- [ ] Membuat fungsi pengiriman form: data dari halaman depan langsung tersimpan ke Supabase.
-- [ ] Membuat generator kode tiket acak yang unik (`SF-XXXX`).
-- [ ] Membuat fungsi pembacaan status berdasarkan kode tiket di halaman `/status`.
-- [ ] Membuat fungsi Guru BK untuk meng-update status dan menulis tanggapan.
+## 🧭 Struktur Berkas Proyek
+
+```
+safe-report/
+├── app/
+│   ├── admin/
+│   │   ├── dashboard/page.tsx   # Dashboard Guru BK (Kelola laporan, ubah status, kirim balasan)
+│   │   ├── login/page.tsx       # Login Portal Guru BK (Ada 1-klik demo)
+│   │   └── page.tsx             # Pengalihan otomatis admin
+│   ├── dashboard/page.tsx       # Dashboard Siswa (Riwayat laporan akun siswa)
+│   ├── lapor/page.tsx           # Formulir Pembuatan Laporan Pengaduan
+│   ├── login/page.tsx           # Login Siswa (Ada 1-klik demo)
+│   ├── status/page.tsx          # Halaman Lacak Status via Kode Tiket (SF-XXXX)
+│   ├── globals.css              # Desain visual, palet warna kuning amber & komponen UI
+│   ├── layout.tsx               # Root layout & Metadata SEO
+│   └── page.tsx                 # Halaman Beranda (Landing Page)
+├── components/
+│   ├── Footer.tsx               # Footer (Hotline darurat SAPPA 129 & privasi)
+│   ├── FormLaporan.tsx          # Komponen formulir pengaduan interaktif
+│   ├── ModalTiket.tsx           # Modal popup kode pelacak & tombol salin
+│   ├── Navbar.tsx               # Navigasi atas + status mode anonim aktif
+│   └── TimelineStatus.tsx       # Alur visual status: Baru -> Diverifikasi -> Diproses -> Selesai
+├── lib/
+│   ├── data.ts                  # Service penyimpanan data & demo mock
+│   └── utils.ts                 # Generator kode tiket & pemformat tanggal Indonesia
+├── types/
+│   └── index.ts                 # Definisi tipe data TypeScript
+├── supabase_schema.sql          # Skrip database cloud Supabase PostgreSQL + RLS
+├── .env.example                 # Template konfigurasi environment Supabase
+├── tailwind.config.ts           # Konfigurasi Tailwind & warna Amber ceria
+└── package.json                 # Dependensi proyek
+```
 
 ---
 
-### 🔍 TAHAP 7: Uji Coba Bersama Klien Kelas & Siklus Revisi
-- [ ] Menguji seluruh alur dari laptop Anda.
-- [ ] Memperlihatkan hasil ke klien kelas:
-  - Menanyakan apakah warna kuningnya sudah pas, atau ingin kombinasi lain.
-  - Menanyakan apakah ada teks/pertanyaan form yang perlu diubah.
-- [ ] Melakukan revisi bersama-sama (dijamin aman dan terstruktur).
+## 🧪 Cara Menjalankan & Menguji Secara Lokal
+
+1. **Buka Terminal di direktori proyek:**
+   ```bash
+   npm run dev
+   ```
+2. **Buka di Browser:**
+   Akses `http://localhost:3000`
+
+### Skenario Uji Coba Lengkap:
+1. **Mengirim Laporan Anonim (Siswa):**
+   - Buka Beranda, klik **"Buat Laporan Sekarang"** (atau `/lapor`).
+   - Pilih jenis bullying (misal: *Verbal*), isi lokasi (*Kantin*), tanggal, dan ceritakan kejadiannya.
+   - Klik **"Kirim Laporan"**.
+   - Simpan / salin **Kode Tiket** yang muncul (contoh: `SF-XXXX`).
+2. **Memeriksa Status Laporan (Siswa):**
+   - Buka menu **"Cek Status"** (atau `/status`).
+   - Masukkan kode tiket yang tadi didapatkan (atau coba kode demo: `SF-7K2X`).
+   - Lihat alur tahapan kasus dan pesan tanggapan dari Guru BK.
+3. **Mengelola Laporan (Guru BK):**
+   - Buka `/admin/login`.
+   - Klik tombol **"1-Klik Masuk Demo: Ibu Ratna, S.Pd (Guru BK)"**.
+   - Pada Dashboard BK, kamu bisa:
+     - Memfilter laporan berdasarkan status/kategori.
+     - Klik **"Kelola Kasus"** pada laporan yang masuk.
+     - Mengubah status (misal dari *Baru* menjadi *Diproses* atau *Selesai*).
+     - Mengetik dan mengirim balasan tindak lanjut.
+4. **Verifikasi Balasan:**
+   - Kembali ke halaman `/status` dengan kode tiket tadi, pesan dari Guru BK akan langsung muncul secara realtime!
 
 ---
 
-### 🚀 TAHAP 8: Publikasi Online ke Vercel (Gratis Rp 0)
-- [ ] Commit dan push kode final ke GitHub.
-- [ ] Menghubungkan repositori GitHub ke **Vercel** (layanan hosting resmi Next.js yang gratis).
-- [ ] Memasukkan variabel database Supabase di pengaturan Vercel.
-- [ ] Klik **Deploy** dan menunggu proses rilis (~1 menit).
-- [ ] Website resmi aktif secara online dan bisa dibuka oleh siapapun lewat link (contoh: `https://safe-report.vercel.app`)! 🎉
+## 🚀 Panduan Publikasi Online (Deployment)
+
+### Langkah 1: Push Kode ke GitHub
+Pastikan seluruh perubahan terkini sudah di-push ke repositori GitHub:
+```bash
+git add .
+git commit -m "feat: complete SafeReport web application with playful amber theme"
+git push origin main
+```
+
+### Langkah 2: Deploy ke Vercel (Gratis)
+1. Buka [https://vercel.com](https://vercel.com) dan login menggunakan akun GitHub-mu.
+2. Klik tombol **"Add New..."** lalu pilih **"Project"**.
+3. Pilih repositori **`test-project`** (atau `safe-report`) dari daftar repositori GitHub.
+4. Pada bagian *Framework Preset*, Vercel akan otomatis mendeteksi **Next.js**.
+5. Klik tombol **"Deploy"**.
+6. Dalam 1-2 menit, aplikasimu sudah aktif dan memiliki URL publik (misal: `safe-report-test.vercel.app`) yang bisa langsung dibuka oleh klien dan teman sekelas!
+
+### Langkah 3: Menghubungkan ke Supabase (Opsional jika ingin Database Cloud)
+1. Buka [https://supabase.com](https://supabase.com) dan buat proyek baru.
+2. Buka menu **SQL Editor**, buka file `supabase_schema.sql` dari proyek ini, lalu klik **Run** untuk membuat semua tabel otomatis.
+3. Masuk ke **Project Settings -> API**, salin `Project URL` dan `anon public key`.
+4. Di dashboard Vercel, masuk ke **Settings -> Environment Variables**, lalu tambahkan:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5. Lakukan *Redeploy* di Vercel. Selesai!

@@ -1,0 +1,256 @@
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  Search,
+  ShieldCheck,
+  AlertCircle,
+  Clock,
+  MapPin,
+  Calendar,
+  MessageSquare,
+  ArrowLeft,
+  CheckCircle2,
+  HelpCircle,
+} from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import TimelineStatus from "@/components/TimelineStatus";
+import { LaporanService } from "@/lib/data";
+import { formatTanggal, formatTanggalWaktu } from "@/lib/utils";
+import { Laporan } from "@/types";
+
+function StatusContent() {
+  const searchParams = useSearchParams();
+  const initialKode = searchParams.get("kode") || "";
+
+  const [inputKode, setInputKode] = useState(initialKode);
+  const [laporan, setLaporan] = useState<Laporan | null>(null);
+  const [searched, setSearched] = useState(false);
+
+  const handleSearch = (codeToSearch?: string) => {
+    const code = (codeToSearch ?? inputKode).trim().toUpperCase();
+    if (!code) return;
+    setInputKode(code);
+    const result = LaporanService.getByKode(code);
+    setLaporan(result);
+    setSearched(true);
+  };
+
+  useEffect(() => {
+    if (initialKode) {
+      handleSearch(initialKode);
+    }
+  }, [initialKode]);
+
+  return (
+    <div className="max-w-3xl mx-auto w-full px-4 py-8">
+      {/* Tombol Kembali */}
+      <div className="mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-600 text-sm font-semibold transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Kembali ke Beranda
+        </Link>
+      </div>
+
+      {/* Header & Kotak Pencarian */}
+      <div className="card p-6 sm:p-8 mb-6 bg-gradient-to-br from-white via-amber-50/50 to-white">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-400 text-stone-900 flex items-center justify-center shadow-sm shadow-amber-200">
+            <Search className="w-6 h-6 text-stone-900" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold text-stone-900">
+              Lacak Status Laporan
+            </h1>
+            <p className="text-xs text-stone-500">
+              Pantau proses tindak lanjut laporanmu menggunakan Kode Tiket unik.
+            </p>
+          </div>
+        </div>
+
+        {/* Input Tiket */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSearch();
+          }}
+          className="flex flex-col sm:flex-row gap-3"
+        >
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Contoh: SF-7K2X"
+              value={inputKode}
+              onChange={(e) => setInputKode(e.target.value.toUpperCase())}
+              className="input uppercase font-mono tracking-wider font-bold text-base pl-11"
+            />
+            <Search className="w-5 h-5 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          </div>
+          <button type="submit" className="btn-primary sm:w-auto px-7 py-3">
+            Cek Status
+          </button>
+        </form>
+
+        {/* Saran Tiket Demo */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-stone-500">
+          <span className="font-semibold text-stone-600">Coba Tiket Demo:</span>
+          {["SF-7K2X", "SF-9M3A", "SF-4P8Z"].map((demoCode) => (
+            <button
+              key={demoCode}
+              type="button"
+              onClick={() => handleSearch(demoCode)}
+              className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-mono font-bold transition-colors cursor-pointer"
+            >
+              {demoCode}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Hasil Pencarian */}
+      {searched && (
+        <>
+          {laporan ? (
+            <div className="space-y-6 animate-fade-in">
+              {/* Ringkasan Status Utama */}
+              <div className="card p-6 border-l-8 border-l-amber-400">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-amber-100">
+                  <div>
+                    <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block">
+                      Kode Pelacak
+                    </span>
+                    <span className="text-2xl font-extrabold font-mono text-amber-600">
+                      {laporan.kode_pelacak}
+                    </span>
+                  </div>
+                  <div>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        laporan.status === "baru"
+                          ? "badge-baru"
+                          : laporan.status === "diverifikasi"
+                          ? "badge-verifikasi"
+                          : laporan.status === "diproses"
+                          ? "badge-proses"
+                          : "badge-selesai"
+                      }`}
+                    >
+                      Status: {laporan.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Detail Singkat Laporan */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
+                    <span className="text-stone-400 block mb-0.5">Kategori</span>
+                    <strong className="text-stone-800 capitalize">
+                      {laporan.kategori}
+                    </strong>
+                  </div>
+                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
+                    <span className="text-stone-400 block mb-0.5">Peran Pelapor</span>
+                    <strong className="text-stone-800 capitalize">
+                      {laporan.peran_pelapor}
+                    </strong>
+                  </div>
+                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
+                    <span className="text-stone-400 block mb-0.5">Tanggal Kejadian</span>
+                    <strong className="text-stone-800">
+                      {formatTanggal(laporan.tanggal_kejadian)}
+                    </strong>
+                  </div>
+                  <div className="bg-amber-50/60 p-2.5 rounded-xl">
+                    <span className="text-stone-400 block mb-0.5">Lokasi</span>
+                    <strong className="text-stone-800 truncate block">
+                      {laporan.lokasi}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline Progres */}
+              <div className="card p-6">
+                <h3 className="font-extrabold text-stone-900 text-base mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                  Alur Penanganan Laporan
+                </h3>
+                <TimelineStatus status={laporan.status} />
+              </div>
+
+              {/* Tanggapan & Pesan dari Guru BK */}
+              <div className="card p-6 bg-gradient-to-br from-white to-amber-50/40">
+                <h3 className="font-extrabold text-stone-900 text-base mb-4 flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-amber-500" />
+                  Tanggapan & Catatan Guru BK
+                </h3>
+
+                {laporan.tindak_lanjut && laporan.tindak_lanjut.length > 0 ? (
+                  <div className="space-y-3">
+                    {laporan.tindak_lanjut
+                      .filter((tl) => tl.is_publik)
+                      .map((tl) => (
+                        <div
+                          key={tl.id}
+                          className="p-4 rounded-2xl bg-white border border-amber-200 shadow-sm"
+                        >
+                          <div className="flex items-center justify-between text-xs text-stone-500 mb-2 pb-1.5 border-b border-amber-50">
+                            <span className="font-bold text-amber-800">
+                              {tl.oleh_nama}
+                            </span>
+                            <span>{formatTanggalWaktu(tl.created_at)}</span>
+                          </div>
+                          <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">
+                            {tl.pesan}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-stone-500 italic">
+                    Belum ada catatan baru dari Guru BK. Pantau terus status tiketmu secara berkala.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="card p-8 text-center bg-rose-50/60 border border-rose-200 animate-fade-in">
+              <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-2" />
+              <h3 className="text-lg font-bold text-rose-900 mb-1">
+                Kode Tiket Tidak Ditemukan
+              </h3>
+              <p className="text-sm text-rose-700 max-w-md mx-auto">
+                Pastikan kode tiket yang kamu masukkan sudah benar (contoh: <code>SF-7K2X</code>). Kode bersifat peka terhadap huruf dan angka.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function StatusPage() {
+  return (
+    <div className="min-h-screen flex flex-col bg-amber-50/60">
+      <Navbar />
+      <main className="flex-1">
+        <Suspense
+          fallback={
+            <div className="max-w-3xl mx-auto w-full px-4 py-16 text-center text-stone-500">
+              Memuat data pelacakan...
+            </div>
+          }
+        >
+          <StatusContent />
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+}
