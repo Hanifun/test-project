@@ -381,7 +381,16 @@ export const AuthService = {
   getUser(): Profile | null {
     if (typeof window === "undefined") return null;
     try {
-      const raw = localStorage.getItem(SECURE_SESSION_KEY);
+      // Bersihkan residu di localStorage agar sesi lama yang tersimpan permanen tidak menahan pengguna
+      if (localStorage.getItem(SECURE_SESSION_KEY)) {
+        localStorage.removeItem(SECURE_SESSION_KEY);
+      }
+      if (localStorage.getItem(SESSION_KEY)) {
+        localStorage.removeItem(SESSION_KEY);
+      }
+
+      // Gunakan sessionStorage agar sesi murni berakhir otomatis saat tab / browser ditutup
+      const raw = sessionStorage.getItem(SECURE_SESSION_KEY);
       if (!raw) return null;
 
       const session: SessionData = JSON.parse(raw);
@@ -456,15 +465,23 @@ export const AuthService = {
       signature,
     };
 
-    localStorage.setItem(SECURE_SESSION_KEY, JSON.stringify(session));
-    // Bersihkan legacy key
+    // Simpan ke sessionStorage (otomatis hilang saat browser / tab ditutup)
+    sessionStorage.setItem(SECURE_SESSION_KEY, JSON.stringify(session));
+    // Pastikan localStorage selalu bersih
+    localStorage.removeItem(SECURE_SESSION_KEY);
     localStorage.removeItem(SESSION_KEY);
   },
 
   logout(): void {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(SECURE_SESSION_KEY);
-    localStorage.removeItem(SESSION_KEY);
+    try {
+      sessionStorage.removeItem(SECURE_SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SECURE_SESSION_KEY);
+      localStorage.removeItem(SESSION_KEY);
+    } catch (e) {
+      console.error(e);
+    }
   },
 };
 // =====================================================

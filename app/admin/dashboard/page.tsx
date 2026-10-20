@@ -102,16 +102,21 @@ export default function AdminDashboardPage() {
     };
   }, [router]);
 
-  // State konfirmasi logout
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  // Konfirmasi dan proses logout admin interaktif
+  const handleLogout = async () => {
+    const ok = await confirmModal({
+      title: "Konfirmasi Keluar",
+      message: "Apakah Anda yakin ingin keluar dari akun admin SafeReport?",
+      confirmText: "Ya, Keluar",
+      cancelText: "Batal",
+      destructive: true,
+    });
 
-  const handleLogout = () => {
-    setShowLogoutConfirm(true);
-  };
-
-  const confirmLogout = () => {
-    AuthService.logout();
-    router.push("/");
+    if (ok) {
+      AuthService.logout();
+      toast("Anda berhasil keluar dari akun admin.", "info");
+      window.location.href = "/";
+    }
   };
 
   // Ubah status laporan
