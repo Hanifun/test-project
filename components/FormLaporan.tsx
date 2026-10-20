@@ -149,7 +149,7 @@ export default function FormLaporan({ user, initialMode, onBackToMenu, onSuccess
       </div>
             {/* Brand Logo & Tombol Kembali ke Menu Pilihan */}
       <div className="pb-4 border-b border-stone-100 flex items-center justify-between flex-wrap gap-2">
-        <Logo size="md" showTagline={true} href="/" />
+        <Logo size="md" showTagline={true} href={user ? (user.role === "admin" ? "/admin/dashboard" : "/dashboard") : null} />
         {onBackToMenu && (
           <button
             type="button"
@@ -224,57 +224,14 @@ export default function FormLaporan({ user, initialMode, onBackToMenu, onSuccess
           </div>
         </>
       ) : (
-        <div className="space-y-4 pb-2 border-b border-stone-100">
+        <div className="pb-3 border-b border-stone-100">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
               Pengaduan Anonim
             </h1>
             <p className="text-xs sm:text-sm text-stone-500 mt-1">
-              Identitasmu 100% dirahasiakan. Laporan akan langsung ditangani secara aman oleh Admin Sekolah.
+              Identitasmu 100% dirahasiakan. Laporan akan langsung ditangani secara aman oleh Tim Penanganan Sekolah.
             </p>
-          </div>
-
-          {/* Opsi Akses: Melapor dengan Identitas & Lacak Tiket */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
-            <Link
-              href="/login"
-              className="group flex items-center justify-between p-3 rounded-2xl bg-stone-50/80 hover:bg-amber-50/80 border border-stone-200/80 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-sm shadow-2xs group-hover:border-amber-400 group-hover:bg-amber-400 group-hover:text-stone-950 transition-colors shrink-0">
-                  👤
-                </div>
-                <div className="text-left">
-                  <div className="text-[11px] text-stone-400 font-medium leading-none mb-1">
-                    Melapor dengan nama resmi?
-                  </div>
-                  <div className="text-xs font-bold text-stone-800 group-hover:text-amber-900 leading-tight">
-                    Masuk Akun Siswa
-                  </div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition-all shrink-0" />
-            </Link>
-
-            <Link
-              href="/status"
-              className="group flex items-center justify-between p-3 rounded-2xl bg-stone-50/80 hover:bg-amber-50/80 border border-stone-200/80 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-sm shadow-2xs group-hover:border-amber-400 group-hover:bg-amber-400 group-hover:text-stone-950 transition-colors shrink-0">
-                  🔍
-                </div>
-                <div className="text-left">
-                  <div className="text-[11px] text-stone-400 font-medium leading-none mb-1">
-                    Sudah punya kode tiket?
-                  </div>
-                  <div className="text-xs font-bold text-stone-800 group-hover:text-amber-900 leading-tight">
-                    Pantau Status Laporan
-                  </div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition-all shrink-0" />
-            </Link>
           </div>
         </div>
       )}

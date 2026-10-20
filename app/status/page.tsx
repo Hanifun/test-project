@@ -84,7 +84,7 @@ function StatusContent() {
             href="/"
             className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-800 text-xs sm:text-sm font-semibold transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Form Laporan
+            <ArrowLeft className="w-4 h-4" /> Kembali ke Beranda
           </Link>
         </div>
 

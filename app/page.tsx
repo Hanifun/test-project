@@ -16,10 +16,30 @@ export default function HomePage() {
   const [user, setUser] = useState<Profile | null>(null);
   const [showAnonForm, setShowAnonForm] = useState(false);
   const [submittedKode, setSubmittedKode] = useState<string | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   useEffect(() => {
-    setUser(AuthService.getUser());
-  }, []);
+    const current = AuthService.getUser();
+    if (current) {
+      if (current.role === "admin") {
+        router.replace("/admin/dashboard");
+      } else {
+        router.replace("/dashboard");
+      }
+      return;
+    }
+    setUser(null);
+    setIsCheckingSession(false);
+  }, [router]);
+
+  // Tampilkan loading saat memeriksa sesi agar tidak berkedip
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-amber-50/50">
+        <div className="w-9 h-9 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // ── TAMPILAN FORMULIR PENGADUAN ANONIM ──────────────────────
   if (showAnonForm) {

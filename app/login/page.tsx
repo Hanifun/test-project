@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,6 +21,17 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTarget = searchParams.get("redirect") || "/dashboard";
   const { toast } = useToast();
+
+  useEffect(() => {
+    const current = AuthService.getUser();
+    if (current) {
+      if (current.role === "admin") {
+        router.replace("/admin/dashboard");
+      } else {
+        router.replace("/dashboard");
+      }
+    }
+  }, [router]);
 
   const [nisn, setNisn] = useState("");
   const [password, setPassword] = useState("");
@@ -179,7 +190,7 @@ export default function LoginPage() {
             href="/"
             className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-800 text-xs sm:text-sm font-semibold transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Formulir Pengaduan
+            <ArrowLeft className="w-4 h-4" /> Kembali
           </Link>
         </div>
 

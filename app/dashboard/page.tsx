@@ -76,7 +76,7 @@ export default function StudentDashboardPage() {
     if (ok) {
       AuthService.logout();
       toast("Anda berhasil keluar dari akun siswa.", "info");
-      router.push("/");
+      router.replace("/");
     }
   };
 
