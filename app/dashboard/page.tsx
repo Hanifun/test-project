@@ -114,8 +114,8 @@ export default function StudentDashboardPage() {
 
           <div className="flex items-center gap-2">
             <Link
-              href="/"
-              className="btn-primary bg-stone-900 hover:bg-stone-800 text-white shadow-none text-xs sm:text-sm font-bold"
+              href="/dashboard/lapor"
+              className="btn-primary bg-stone-900 hover:bg-stone-800 text-white shadow-none text-xs sm:text-sm font-bold cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" /> Buat Aduan Baru
             </Link>
@@ -221,7 +221,7 @@ export default function StudentDashboardPage() {
               <p className="text-xs text-stone-500 max-w-sm mx-auto mb-5 leading-relaxed">
                 Kamu belum pernah mengirim laporan dengan akun ini. Jika mengalami atau melihat perundungan, jangan ragu untuk bersuara.
               </p>
-              <Link href="/" className="btn-primary text-xs px-6 py-2.5 font-bold">
+              <Link href="/dashboard/lapor" className="btn-primary text-xs px-6 py-2.5 font-bold cursor-pointer">
                 <PlusCircle className="w-4 h-4" /> Buat Pengaduan Sekarang
               </Link>
             </div>
