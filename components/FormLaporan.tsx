@@ -58,10 +58,7 @@ export default function FormLaporan({ user, initialMode, onBackToMenu, onSuccess
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Mode Identitas: prioritaskan initialMode bila ada, atau siswa jika login, atau anonim
-  const [modeIdentitas, setModeIdentitas] = useState<"siswa" | "anonim">(
-    initialMode || (user ? "siswa" : "anonim")
-  );
+
 
   const [form, setForm] = useState<Partial<FormLaporanData>>({
     peran_pelapor: "korban",
@@ -117,7 +114,7 @@ export default function FormLaporan({ user, initialMode, onBackToMenu, onSuccess
       const laporan = await LaporanService.create(
         {
           ...form,
-          mode_identitas: user ? modeIdentitas : "anonim",
+          mode_identitas: user ? "siswa" : "anonim",
           bukti_files: selectedFiles,
           _hp_trap: honeypot,
         } as FormLaporanData,
@@ -147,10 +144,17 @@ export default function FormLaporan({ user, initialMode, onBackToMenu, onSuccess
           onChange={(e) => setHoneypot(e.target.value)}
         />
       </div>
-            {/* Brand Logo & Tombol Kembali ke Menu Pilihan */}
+            {/* Brand Logo & Tombol Kembali */}
       <div className="pb-4 border-b border-stone-100 flex items-center justify-between flex-wrap gap-2">
         <Logo size="md" showTagline={true} href={user ? (user.role === "admin" ? "/admin/dashboard" : "/dashboard") : null} />
-        {onBackToMenu && (
+        {user ? (
+          <Link
+            href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-stone-600 hover:text-amber-800 hover:bg-amber-100/60 border border-stone-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-amber-600" /> Kembali ke Dashboard
+          </Link>
+        ) : onBackToMenu ? (
           <button
             type="button"
             onClick={onBackToMenu}
@@ -158,71 +162,26 @@ export default function FormLaporan({ user, initialMode, onBackToMenu, onSuccess
           >
             <ArrowLeft className="w-3.5 h-3.5 text-amber-600" /> Kembali ke Pilihan Menu
           </button>
-        )}
+        ) : null}
       </div>
 
-      {/* Header Form */}
+      {/* Header Form: Format Sama Persis, Akun Siswa Menggunakan Identitas Resmi */}
       {user ? (
-        <>
-          <div className="pb-3 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-stone-900">
-                Pengaduan Bullying
+        <div className="pb-3 border-b border-stone-100">
+          <div>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+                Pengaduan Siswa
               </h1>
-              <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                Masuk sebagai <strong>{user.nama}</strong> ({user.nisn_kelas || "Siswa"}). Pilih cara melapor di bawah.
-              </p>
+              <span className="text-[11px] font-bold text-amber-900 bg-amber-100/90 border border-amber-300 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-amber-700" /> Identitas Resmi Siswa
+              </span>
             </div>
-            <Link
-              href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold border border-amber-300 transition-colors w-fit shrink-0 cursor-pointer shadow-2xs"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Kembali ke Dashboard
-            </Link>
+            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              Melapor resmi sebagai <strong className="text-stone-800 font-bold">{user.nama}</strong> ({user.nisn_kelas || "Siswa"}). Laporan akan langsung ditangani dan didampingi secara aman oleh Admin Sekolah.
+            </p>
           </div>
-
-          {/* Pilihan Identitas Pelapor (Jika Login Siswa) */}
-          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200">
-            <label className="form-label mb-2 block">Identitas Pelapor dalam Laporan Ini</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => setModeIdentitas("siswa")}
-                className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
-                  modeIdentitas === "siswa"
-                    ? "border-amber-500 bg-white shadow-xs"
-                    : "border-stone-200 bg-amber-50/40 text-stone-500 hover:border-amber-300"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <UserCheck className={`w-4 h-4 ${modeIdentitas === "siswa" ? "text-amber-600" : "text-stone-400"}`} />
-                  <span className="font-bold text-xs sm:text-sm text-stone-900">Dengan Identitas Siswa</span>
-                </div>
-                <p className="text-[11px] text-stone-600 leading-snug">
-                  Nama: <strong>{user.nama}</strong> ({user.nisn_kelas || "Siswa"}). Memudahkan Admin memberikan pendampingan langsung.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setModeIdentitas("anonim")}
-                className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
-                  modeIdentitas === "anonim"
-                    ? "border-amber-500 bg-white shadow-xs"
-                    : "border-stone-200 bg-amber-50/40 text-stone-500 hover:border-amber-300"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Shield className={`w-4 h-4 ${modeIdentitas === "anonim" ? "text-amber-600" : "text-stone-400"}`} />
-                  <span className="font-bold text-xs sm:text-sm text-stone-900">Lapor sebagai Anonim</span>
-                </div>
-                <p className="text-[11px] text-stone-600 leading-snug">
-                  Identitasmu disembunyikan sepenuhnya dari Admin, namun tetap tersimpan di riwayat akunmu.
-                </p>
-              </button>
-            </div>
-          </div>
-        </>
+        </div>
       ) : (
         <div className="pb-3 border-b border-stone-100">
           <div>
