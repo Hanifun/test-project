@@ -99,7 +99,14 @@ export default function AdminDashboardPage() {
     };
   }, [router]);
 
+  // State konfirmasi logout
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     AuthService.logout();
     router.push("/");
   };
@@ -236,13 +243,30 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-rose-900/50 hover:text-rose-300 text-stone-300 transition-colors cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" /> Keluar
-            </button>
+            {!showLogoutConfirm ? (
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-rose-900/50 hover:text-rose-300 text-stone-300 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Keluar
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-950/60 border border-rose-800">
+                <span className="text-[11px] text-rose-300 font-semibold">Yakin keluar?</span>
+                <button
+                  onClick={confirmLogout}
+                  className="text-[11px] font-black text-white bg-rose-600 hover:bg-rose-500 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  Ya
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="text-[11px] font-bold text-stone-400 hover:text-stone-200 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

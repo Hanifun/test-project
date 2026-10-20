@@ -1,93 +1,125 @@
 "use client";
 
-import { RateLimiter } from "@/lib/security";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   ShieldCheck,
-  Lock,
   ArrowRight,
-  KeyRound,
-  UserPlus,
-  LogIn,
   AlertCircle,
-  CheckCircle2,
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  Lock,
 } from "lucide-react";
 import { AdminService, AuthService } from "@/lib/data";
+import { RateLimiter, sanitizeInput } from "@/lib/security";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
-  // State Login
-  const [loginEmail, setLoginEmail] = useState("admin@sekolah.id");
-  const [loginPassword, setLoginPassword] = useState("admin");
+  // State Form Login (Default kosong, tidak menampilkan kredensial)
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // State Validasi & Pesan Error
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // State Buat Akun Admin Baru
-  const [regNama, setRegNama] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [regJabatan, setRegJabatan] = useState("");
-  const [regSuccess, setRegSuccess] = useState<string | null>(null);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError(null);
-
-    // Proteksi Brute Force (Maksimal 5 percobaan gagal per 5 menit)
-    const rateCheck = RateLimiter.check("admin_login_attempt", 5, 5 * 60 * 1000, 2000);
-    if (!rateCheck.allowed) {
-      setLoginError(rateCheck.error || "Terlalu banyak percobaan login. Silakan tunggu.");
-      return;
-    }
-
-    const admin = AdminService.login(loginEmail, loginPassword);
-    if (!admin) {
-      RateLimiter.record("admin_login_attempt");
-      setLoginError("Email atau kata sandi tidak cocok. Percobaan gagal tercatat demi keamanan.");
-      return;
-    }
-
-    AuthService.setUser({
-      id: admin.id,
-      nama: admin.nama,
-      email: admin.email,
-      nisn_kelas: admin.nip_jabatan || "Admin",
-      role: "admin",
-      created_at: admin.created_at,
-    });
-
-    router.push("/admin/dashboard");
+  // Helper validasi format email
+  const validateEmailFormat = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleEmailChange = (val: string) => {
+    setLoginEmail(val);
+    if (emailError) setEmailError(null);
+    if (loginError) setLoginError(null);
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setLoginPassword(val);
+    if (passwordError) setPasswordError(null);
+    if (loginError) setLoginError(null);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regNama.trim() || !regEmail.trim()) return;
+    setLoginError(null);
+    setEmailError(null);
+    setPasswordError(null);
 
-    const newAdmin = AdminService.create({
-      nama: regNama.trim(),
-      email: regEmail.trim(),
-      password: regPassword || "admin123",
-      nip_jabatan: regJabatan.trim() || "Administrator Sekolah",
-    });
+    const cleanEmail = sanitizeInput(loginEmail.trim().toLowerCase());
+    const cleanPassword = loginPassword.trim();
 
-    setRegSuccess(`Akun admin atas nama "${newAdmin.nama}" berhasil dibuat. Silakan masuk.`);
-    setLoginEmail(newAdmin.email);
-    setLoginPassword(newAdmin.password || "");
-    setActiveTab("login");
+    // 1. Validasi Input Email
+    if (!cleanEmail) {
+      setEmailError("Email admin tidak boleh kosong.");
+      return;
+    }
+    if (!validateEmailFormat(cleanEmail)) {
+      setEmailError("Format email tidak valid (contoh: admin@sekolah.id).");
+      return;
+    }
+
+    // 2. Validasi Input Password
+    if (!cleanPassword) {
+      setPasswordError("Kata sandi tidak boleh kosong.");
+      return;
+    }
+    if (cleanPassword.length < 4) {
+      setPasswordError("Kata sandi minimal 4 karakter.");
+      return;
+    }
+
+    // 3. Proteksi Brute Force (Maksimal 5 percobaan per 5 menit)
+    const rateCheck = RateLimiter.check("admin_login_attempt", 5, 5 * 60 * 1000, 2000);
+    if (!rateCheck.allowed) {
+      setLoginError(rateCheck.error || "Terlalu banyak percobaan login gagal. Silakan tunggu beberapa saat.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Simulasi delay mikro untuk UX feedback yang halus
+      await new Promise((resolve) => setTimeout(resolve, 350));
+
+      const admin = AdminService.login(cleanEmail, cleanPassword);
+      if (!admin) {
+        RateLimiter.record("admin_login_attempt");
+        setLoginError("Email atau kata sandi tidak cocok. Silakan periksa kembali.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Set sesi profil admin terenkripsi
+      AuthService.setUser({
+        id: admin.id,
+        nama: admin.nama,
+        email: admin.email,
+        nisn_kelas: admin.nip_jabatan || "Administrator Sekolah",
+        role: "admin",
+        created_at: admin.created_at,
+      });
+
+      router.push("/admin/dashboard");
+    } catch {
+      setLoginError("Terjadi kendala saat memproses login. Silakan coba kembali.");
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-900 text-stone-100 px-4 py-12 justify-center items-center">
       <div className="max-w-md w-full">
-        
-
         <div className="bg-stone-800/90 border border-stone-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xs">
           {/* Header */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-7">
             <div className="w-12 h-12 rounded-2xl bg-amber-400 text-stone-950 flex items-center justify-center mx-auto mb-3 shadow-md font-black">
               <ShieldCheck className="w-6 h-6 text-stone-950" />
             </div>
@@ -95,163 +127,114 @@ export default function AdminLoginPage() {
               Portal Admin
             </h1>
             <p className="text-xs text-stone-400 mt-1">
-              Pusat kelola pengaduan dan manajemen akun siswa sekolah.
+              Pusat kendali dan pengelolaan laporan pengaduan sekolah.
             </p>
           </div>
 
-          {/* Tab Selector: Masuk / Buat Akun Admin */}
-          <div className="grid grid-cols-2 p-1 rounded-2xl bg-stone-900 border border-stone-700 mb-6 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setActiveTab("login")}
-              className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeTab === "login"
-                  ? "bg-amber-400 text-stone-950 shadow-xs"
-                  : "text-stone-400 hover:text-white"
-              }`}
-            >
-              <LogIn className="w-3.5 h-3.5" /> Masuk Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("register")}
-              className={`py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeTab === "register"
-                  ? "bg-amber-400 text-stone-950 shadow-xs"
-                  : "text-stone-400 hover:text-white"
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" /> Buat Akun Admin
-            </button>
-          </div>
-
-          {regSuccess && (
-            <div className="mb-4 p-3 rounded-2xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{regSuccess}</span>
-            </div>
-          )}
-
-          {activeTab === "login" ? (
-            /* Tab 1: Form Login */
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Email Admin / Admin
-                </label>
+          {/* Form Login Admin */}
+          <form onSubmit={handleLogin} className="space-y-4.5" noValidate>
+            {/* Input Email */}
+            <div>
+              <label className="block text-xs font-bold text-stone-300 mb-1.5 flex items-center justify-between">
+                <span>Email Admin</span>
+                <span className="text-[10px] text-stone-500 font-normal">Wajib diisi</span>
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="email"
-                  required
-                  placeholder="admin@sekolah.id"
+                  autoComplete="email"
+                  placeholder="nama@sekolah.id"
                   value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-2xl bg-stone-900 border text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none transition-colors ${
+                    emailError
+                      ? "border-rose-500 focus:ring-2 focus:ring-rose-500/50"
+                      : "border-stone-700 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30"
+                  }`}
                 />
               </div>
+              {emailError && (
+                <p className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{emailError}</span>
+                </p>
+              )}
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Kata Sandi
-                </label>
+            {/* Input Password */}
+            <div>
+              <label className="block text-xs font-bold text-stone-300 mb-1.5 flex items-center justify-between">
+                <span>Kata Sandi</span>
+                <span className="text-[10px] text-stone-500 font-normal">Minimal 4 karakter</span>
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
-                  type="password"
-                  required
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   placeholder="Masukkan kata sandi"
                   value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  className={`w-full pl-10 pr-10 py-2.5 rounded-2xl bg-stone-900 border text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none transition-colors ${
+                    passwordError
+                      ? "border-rose-500 focus:ring-2 focus:ring-rose-500/50"
+                      : "border-stone-700 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30"
+                  }`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-300 transition-colors p-0.5 cursor-pointer"
+                  title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
-
-              {loginError && (
-                <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{loginError}</span>
-                </div>
+              {passwordError && (
+                <p className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{passwordError}</span>
+                </p>
               )}
+            </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
-              >
-                Masuk Dashboard Admin <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <div className="p-3 rounded-2xl bg-stone-900/90 border border-stone-700/80 text-[11px] text-stone-400 leading-relaxed">
-                <span className="font-bold text-amber-300 block mb-0.5">Akun Bawaan Awal:</span>
-                Email: <code className="text-stone-200">admin@sekolah.id</code> • Sandi: <code className="text-stone-200">admin</code>
+            {/* Error Banner Global (Gagal Login / Brute Force) */}
+            {loginError && (
+              <div className="p-3 rounded-2xl bg-rose-950/70 border border-rose-800 text-rose-300 text-xs flex items-start gap-2.5 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+                <span className="leading-relaxed">{loginError}</span>
               </div>
-            </form>
-          ) : (
-            /* Tab 2: Form Buat Akun Admin */
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Nama Lengkap Admin
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Ibu Ratna, S.Pd"
-                  value={regNama}
-                  onChange={(e) => setRegNama(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
+            )}
 
-              <div>
-                <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Email Admin
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="admin@sekolah.sch.id"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
+            {/* Tombol Masuk */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-2 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 disabled:bg-stone-700 disabled:text-stone-500 text-stone-950 font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Memverifikasi Kredensial...
+                </>
+              ) : (
+                <>
+                  Masuk Dashboard Admin <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
 
-              <div>
-                <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Jabatan / Unit
-                </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Administrator Sekolah / Satgas Disiplin"
-                  value={regJabatan}
-                  onChange={(e) => setRegJabatan(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Kata Sandi
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Minimal 6 karakter"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
-              >
-                Daftarkan Akun Admin Baru <UserPlus className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-
-          <p className="mt-6 text-center text-[11px] text-stone-500">
-            Akses terbatas hanya untuk staf yang berwenang.
-          </p>
+          {/* Footer Card */}
+          <div className="mt-7 pt-4 border-t border-stone-700/60 text-center">
+            <p className="text-[11px] text-stone-500">
+              Akses terbatas hanya untuk staf & pengelola sekolah berwenang.
+            </p>
+          </div>
         </div>
       </div>
     </div>
