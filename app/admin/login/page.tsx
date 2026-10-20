@@ -1,5 +1,7 @@
 "use client";
 
+import { RateLimiter } from "@/lib/security";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -7,7 +9,6 @@ import {
   ShieldCheck,
   Lock,
   ArrowRight,
-  ArrowLeft,
   KeyRound,
   UserPlus,
   LogIn,
@@ -36,9 +37,17 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoginError(null);
 
+    // Proteksi Brute Force (Maksimal 5 percobaan gagal per 5 menit)
+    const rateCheck = RateLimiter.check("admin_login_attempt", 5, 5 * 60 * 1000, 2000);
+    if (!rateCheck.allowed) {
+      setLoginError(rateCheck.error || "Terlalu banyak percobaan login. Silakan tunggu.");
+      return;
+    }
+
     const admin = AdminService.login(loginEmail, loginPassword);
     if (!admin) {
-      setLoginError("Email atau kata sandi tidak cocok.");
+      RateLimiter.record("admin_login_attempt");
+      setLoginError("Email atau kata sandi tidak cocok. Percobaan gagal tercatat demi keamanan.");
       return;
     }
 
@@ -46,7 +55,7 @@ export default function AdminLoginPage() {
       id: admin.id,
       nama: admin.nama,
       email: admin.email,
-      nisn_kelas: admin.nip_jabatan || "Guru BK",
+      nisn_kelas: admin.nip_jabatan || "Admin",
       role: "admin",
       created_at: admin.created_at,
     });
@@ -62,7 +71,7 @@ export default function AdminLoginPage() {
       nama: regNama.trim(),
       email: regEmail.trim(),
       password: regPassword || "admin123",
-      nip_jabatan: regJabatan.trim() || "Guru Bimbingan Konseling",
+      nip_jabatan: regJabatan.trim() || "Administrator Sekolah",
     });
 
     setRegSuccess(`Akun admin atas nama "${newAdmin.nama}" berhasil dibuat. Silakan masuk.`);
@@ -74,15 +83,7 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-stone-900 text-stone-100 px-4 py-12 justify-center items-center">
       <div className="max-w-md w-full">
-        {/* Tombol Kembali ke Halaman Publik */}
-        <div className="mb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-stone-400 hover:text-amber-400 text-xs font-semibold transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> Kembali ke Halaman Pengaduan
-          </Link>
-        </div>
+        
 
         <div className="bg-stone-800/90 border border-stone-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xs">
           {/* Header */}
@@ -91,7 +92,7 @@ export default function AdminLoginPage() {
               <ShieldCheck className="w-6 h-6 text-stone-950" />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white">
-              Portal Guru BK & Admin
+              Portal Admin
             </h1>
             <p className="text-xs text-stone-400 mt-1">
               Pusat kelola pengaduan dan manajemen akun siswa sekolah.
@@ -136,7 +137,7 @@ export default function AdminLoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Email Admin / Guru BK
+                  Email Admin / Admin
                 </label>
                 <input
                   type="email"
@@ -173,7 +174,7 @@ export default function AdminLoginPage() {
                 type="submit"
                 className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
               >
-                Masuk Dashboard BK <ArrowRight className="w-4 h-4" />
+                Masuk Dashboard Admin <ArrowRight className="w-4 h-4" />
               </button>
 
               <div className="p-3 rounded-2xl bg-stone-900/90 border border-stone-700/80 text-[11px] text-stone-400 leading-relaxed">
@@ -186,7 +187,7 @@ export default function AdminLoginPage() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Nama Lengkap Guru BK
+                  Nama Lengkap Admin
                 </label>
                 <input
                   type="text"
@@ -200,12 +201,12 @@ export default function AdminLoginPage() {
 
               <div>
                 <label className="block text-xs font-bold text-stone-300 mb-1.5">
-                  Email Guru BK
+                  Email Admin
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="bk@sekolah.sch.id"
+                  placeholder="admin@sekolah.sch.id"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
@@ -218,7 +219,7 @@ export default function AdminLoginPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Contoh: Koordinator BK / Satgas Kekerasan"
+                  placeholder="Contoh: Administrator Sekolah / Satgas Disiplin"
                   value={regJabatan}
                   onChange={(e) => setRegJabatan(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-2xl bg-stone-900 border border-stone-700 text-white text-xs sm:text-sm placeholder:text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"

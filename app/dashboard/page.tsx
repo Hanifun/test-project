@@ -12,7 +12,7 @@ import {
   LogOut,
   ChevronRight,
   Inbox,
-  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -24,21 +24,53 @@ export default function StudentDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<Profile | null>(null);
   const [laporanList, setLaporanList] = useState<Laporan[]>([]);
+  const [searchKode, setSearchKode] = useState("");
 
   useEffect(() => {
-    const current = AuthService.getUser();
-    if (!current) {
-      router.push("/login");
-      return;
+    const checkSession = () => {
+      const current = AuthService.getUser();
+      if (!current) {
+        router.push("/login?expired=1");
+        return false;
+      }
+      setUser(current);
+      return true;
+    };
+
+    const isOk = checkSession();
+    if (isOk) {
+      const current = AuthService.getUser();
+      if (current) {
+        const list = LaporanService.getByPelaporId(current.id);
+        setLaporanList(list);
+      }
     }
-    setUser(current);
-    const list = LaporanService.getByPelaporId(current.id);
-    setLaporanList(list);
+
+    // Pemantauan berkala sesi siswa
+    const interval = setInterval(checkSession, 30000);
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "safereport_real_session" && !e.newValue) {
+        router.push("/login");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, [router]);
 
   const handleLogout = () => {
     AuthService.logout();
     router.push("/");
+  };
+
+  const handleCariKode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchKode.trim()) return;
+    router.push(`/status?kode=${searchKode.trim().toUpperCase()}`);
   };
 
   if (!user) return null;
@@ -49,7 +81,7 @@ export default function StudentDashboardPage() {
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         {/* Banner Profil Siswa */}
-        <div className="card p-6 sm:p-7 mb-8 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-stone-900 border border-amber-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="card p-6 sm:p-7 mb-6 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-stone-900 border border-amber-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white text-stone-900 flex items-center justify-center font-black text-xl shadow-xs">
               {user.nama.charAt(0)}
@@ -81,6 +113,25 @@ export default function StudentDashboardPage() {
               <LogOut className="w-4 h-4" /> Keluar
             </button>
           </div>
+        </div>
+
+        {/* Kotak Pencarian Tiket Cepat */}
+        <div className="card p-4 sm:p-5 mb-8 border border-amber-200/90 bg-white shadow-xs">
+          <form onSubmit={handleCariKode} className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Punya Kode Tiket lain? Masukkan kode di sini (SF-XXXX)..."
+                value={searchKode}
+                onChange={(e) => setSearchKode(e.target.value.toUpperCase())}
+                className="input pl-10 text-xs sm:text-sm font-mono uppercase"
+              />
+            </div>
+            <button type="submit" className="btn-primary w-full sm:w-auto px-5 py-2.5 text-xs font-bold">
+              Lacak Tiket Ini <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </form>
         </div>
 
         {/* Daftar Laporan Pengguna */}
@@ -117,6 +168,15 @@ export default function StudentDashboardPage() {
                       >
                         {item.status}
                       </span>
+                      {item.is_anonim ? (
+                        <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+                          🎭 Terkirim Anonim
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                          👤 Dengan Identitas Siswa
+                        </span>
+                      )}
                       <span className="text-xs text-stone-400">
                         • {formatTanggal(item.tanggal_kejadian)}
                       </span>

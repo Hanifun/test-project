@@ -1,58 +1,136 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Search,
-  ShieldCheck,
+  ArrowLeft,
   AlertCircle,
   Clock,
-  ArrowLeft,
   MessageSquare,
-  FileText,
-  Calendar,
-  MapPin,
+  Lock,
+  User,
+  ShieldCheck,
+  LayoutDashboard,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TimelineStatus from "@/components/TimelineStatus";
-import { LaporanService } from "@/lib/data";
+import { AuthService, LaporanService } from "@/lib/data";
 import { formatTanggal, formatTanggalWaktu } from "@/lib/utils";
-import { Laporan } from "@/types";
+import { Laporan, Profile } from "@/types";
 
 function StatusContent() {
   const searchParams = useSearchParams();
-  const initialKode = searchParams.get("kode") || "";
+  const kodeParam = searchParams.get("kode") || "";
 
-  const [inputKode, setInputKode] = useState(initialKode);
+  const [user, setUser] = useState<Profile | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  const [inputKode, setInputKode] = useState(kodeParam);
   const [laporan, setLaporan] = useState<Laporan | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const handleSearch = (codeToSearch?: string) => {
-    const code = (codeToSearch ?? inputKode).trim().toUpperCase();
-    if (!code) return;
-    setInputKode(code);
-    const result = LaporanService.getByKode(code);
-    setLaporan(result);
+  useEffect(() => {
+    const currentUser = AuthService.getUser();
+    setUser(currentUser);
+    setIsCheckingAuth(false);
+
+    if (currentUser && kodeParam) {
+      setInputKode(kodeParam);
+      const res = LaporanService.getByKode(kodeParam);
+      setLaporan(res);
+      setSearched(true);
+    }
+  }, [kodeParam]);
+
+  const handleSearch = (overrideKode?: string) => {
+    const target = (overrideKode || inputKode).trim().toUpperCase();
+    if (!target) return;
+    const res = LaporanService.getByKode(target);
+    setLaporan(res);
     setSearched(true);
   };
 
-  useEffect(() => {
-    if (initialKode) {
-      handleSearch(initialKode);
-    }
-  }, [initialKode]);
+  if (isCheckingAuth) {
+    return (
+      <div className="max-w-md mx-auto w-full px-4 py-16 text-center text-stone-400 text-xs">
+        Memeriksa sesi...
+      </div>
+    );
+  }
 
+  // Jika Belum Login: Tampilkan Layar Kebutuhan Login Akun Siswa
+  if (!user) {
+    const loginRedirect = kodeParam
+      ? `/login?redirect=${encodeURIComponent(`/status?kode=${kodeParam}`)}`
+      : "/login?redirect=/status";
+
+    return (
+      <div className="max-w-md mx-auto w-full px-4 py-12">
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-800 text-xs sm:text-sm font-semibold transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Kembali ke Form Laporan
+          </Link>
+        </div>
+
+        <div className="card p-7 sm:p-9 border border-amber-200/90 bg-white text-center shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-4 shadow-inner">
+            <Lock className="w-7 h-7 text-amber-700" />
+          </div>
+
+          <h2 className="text-xl font-black text-stone-900 mb-2">
+            Masuk Akun Siswa untuk Melacak Tiket
+          </h2>
+
+          <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-6">
+            Untuk menjaga kerahasiaan kasus dan memastikan informasi hanya dapat diakses oleh pihak yang berhak, pelacakan status tiket pengaduan dapat dilakukan setelah masuk ke Akun Siswa.
+          </p>
+
+          <div className="space-y-3">
+            <Link
+              href={loginRedirect}
+              className="btn-primary w-full py-3 text-xs sm:text-sm font-bold shadow-xs flex items-center justify-center gap-2"
+            >
+              <User className="w-4 h-4" /> Masuk ke Akun Siswa
+            </Link>
+
+            <Link
+              href="/"
+              className="btn-secondary w-full py-3 text-xs sm:text-sm font-semibold block text-center"
+            >
+              Kirim Pengaduan Baru
+            </Link>
+          </div>
+
+          <p className="text-[11px] text-stone-400 mt-5 pt-4 border-t border-amber-100">
+            Akun siswa didaftarkan oleh Admin sekolah untuk perlindungan siswa.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Jika Sudah Login: Tampilkan Form Pelacakan Tiket
   return (
     <div className="max-w-3xl mx-auto w-full px-4 py-8">
-      {/* Tombol Kembali ke Form Laporan */}
-      <div className="mb-6">
+      {/* Navigasi Balik */}
+      <div className="flex items-center justify-between mb-6 gap-2">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-700 text-xs sm:text-sm font-semibold transition-colors"
+          className="inline-flex items-center gap-1.5 text-stone-500 hover:text-amber-800 text-xs sm:text-sm font-semibold transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Kembali ke Formulir Pengaduan
+          <ArrowLeft className="w-4 h-4" /> Kembali ke Form Laporan
+        </Link>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-amber-800 hover:text-amber-900 text-xs sm:text-sm font-bold transition-colors bg-amber-100/70 px-3 py-1.5 rounded-xl border border-amber-200"
+        >
+          <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard Saya
         </Link>
       </div>
 
@@ -67,7 +145,7 @@ function StatusContent() {
               Lacak Status Pengaduan
             </h1>
             <p className="text-xs text-stone-500 mt-0.5">
-              Masukkan Kode Tiket unik yang kamu terima setelah mengirim laporan.
+              Masuk sebagai <strong>{user.nama}</strong>. Masukkan Kode Tiket unik untuk melihat perkembangannya.
             </p>
           </div>
         </div>
@@ -112,7 +190,7 @@ function StatusContent() {
                       {laporan.kode_pelacak}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                         laporan.status === "baru"
@@ -126,6 +204,15 @@ function StatusContent() {
                     >
                       Status: {laporan.status}
                     </span>
+                    {laporan.is_anonim ? (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-stone-100 text-stone-700 border border-stone-200">
+                        🎭 Anonim
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        👤 Identitas Siswa
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -167,11 +254,11 @@ function StatusContent() {
                 <TimelineStatus status={laporan.status} />
               </div>
 
-              {/* Tanggapan & Catatan Guru BK */}
+              {/* Tanggapan & Catatan Admin */}
               <div className="card p-6 border-amber-200/80 bg-gradient-to-br from-white to-amber-50/40 shadow-xs">
                 <h3 className="font-extrabold text-stone-900 text-sm sm:text-base mb-4 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-amber-500" />
-                  Tanggapan & Pendampingan Guru BK
+                  Tanggapan & Pendampingan Admin
                 </h3>
 
                 {laporan.tindak_lanjut && laporan.tindak_lanjut.length > 0 ? (
@@ -197,7 +284,7 @@ function StatusContent() {
                   </div>
                 ) : (
                   <p className="text-xs text-stone-500 italic">
-                    Belum ada catatan baru dari Guru BK. Laporanmu sudah tersimpan aman di sistem.
+                    Belum ada catatan baru dari Admin. Laporanmu sudah tersimpan aman di sistem.
                   </p>
                 )}
               </div>

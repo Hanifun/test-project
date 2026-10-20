@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ShieldCheck, Search, LogOut, LayoutDashboard, ShieldAlert } from "lucide-react";
+import { ShieldCheck, LogOut, LayoutDashboard } from "lucide-react";
 import { AuthService } from "@/lib/data";
 import { Profile } from "@/types";
 
@@ -43,52 +43,25 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Status Mode Anonim Aktif */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/70 border border-amber-300 text-amber-900 text-xs font-semibold">
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-          <span>Mode Pengaduan Anonim Aktif</span>
-        </div>
-
-        {/* Menu Kanan */}
-        <div className="flex items-center gap-2">
-          <Link
-            href="/status"
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              pathname === "/status"
-                ? "bg-amber-100 text-amber-900"
-                : "text-stone-600 hover:bg-amber-50 hover:text-amber-800"
-            }`}
-          >
-            <Search className="w-4 h-4" />
-            <span>Lacak Tiket</span>
-          </Link>
-
-          {user ? (
-            <div className="flex items-center gap-1.5">
-              <Link
-                href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-stone-900 text-xs sm:text-sm font-bold shadow-xs transition-colors"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span className="max-w-[100px] truncate">{user.nama.split(" ")[0]}</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                title="Keluar"
-                className="p-2 rounded-xl text-stone-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
+        {/* Menu Kanan (Hanya tampil saat user sudah login) */}
+        {user ? (
+          <div className="flex items-center gap-1.5">
             <Link
-              href="/admin/login"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold transition-colors"
+              href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-stone-900 text-xs sm:text-sm font-bold shadow-xs transition-colors"
             >
-              <span>Portal BK</span>
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="max-w-[110px] truncate">{user.nama.split(" ")[0]}</span>
             </Link>
-          )}
-        </div>
+            <button
+              onClick={handleLogout}
+              title="Keluar"
+              className="p-2 rounded-xl text-stone-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : null}
       </div>
     </header>
   );

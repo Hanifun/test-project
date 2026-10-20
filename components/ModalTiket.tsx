@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Copy, Check, Camera, ArrowRight, ShieldCheck } from "lucide-react";
+import { Copy, Check, Camera, ArrowRight, ShieldCheck, User } from "lucide-react";
+import { AuthService } from "@/lib/data";
 
 interface Props {
   kode: string;
@@ -11,6 +12,7 @@ interface Props {
 
 export default function ModalTiket({ kode, onClose }: Props) {
   const [copied, setCopied] = useState(false);
+  const user = typeof window !== "undefined" ? AuthService.getUser() : null;
 
   const handleCopy = async () => {
     try {
@@ -37,7 +39,7 @@ export default function ModalTiket({ kode, onClose }: Props) {
           Laporan Berhasil Terkirim
         </h2>
         <p className="text-xs text-stone-500 mb-5 leading-relaxed">
-          Terima kasih telah berani bersuara. Laporanmu sudah diterima dan akan ditindaklanjuti secara rahasia oleh Guru BK.
+          Terima kasih telah berani bersuara. Laporanmu sudah diterima dan akan ditindaklanjuti secara rahasia oleh Admin.
         </p>
 
         {/* Box Kode Tiket */}
@@ -70,21 +72,30 @@ export default function ModalTiket({ kode, onClose }: Props) {
         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-100/50 border border-amber-200 text-left mb-5">
           <Camera className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
           <p className="text-[11px] text-amber-900 leading-relaxed">
-            <strong>Penting:</strong> Harap tangkap layar (screenshot) atau catat kode ini. Karena kamu melapor tanpa nama (anonim), kode ini adalah satu-satunya alat untuk memantau tanggapan dan perkembangan kasus dari Guru BK.
+            <strong>Penting:</strong> Harap tangkap layar (screenshot) atau salin kode ini. Untuk melacak tindak lanjut dari Admin, kamu dapat menggunakannya saat masuk ke akun siswa.
           </p>
         </div>
 
         {/* Tombol Aksi */}
         <div className="flex flex-col gap-2">
-          <Link
-            href={`/status?kode=${kode}`}
-            className="btn-primary w-full py-2.5 text-xs font-bold"
-          >
-            Pantau Status Laporan <ArrowRight className="w-4 h-4" />
-          </Link>
+          {user ? (
+            <Link
+              href={`/status?kode=${kode}`}
+              className="btn-primary w-full py-2.5 text-xs font-bold"
+            >
+              Pantau Status Laporan <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <Link
+              href={`/login?redirect=${encodeURIComponent(`/status?kode=${kode}`)}`}
+              className="btn-primary w-full py-2.5 text-xs font-bold flex items-center justify-center gap-1.5"
+            >
+              <User className="w-3.5 h-3.5" /> Masuk Akun Siswa untuk Lacak
+            </Link>
+          )}
           <button
             onClick={onClose}
-            className="btn-secondary w-full py-2.5 text-xs font-semibold"
+            className="btn-secondary w-full py-2.5 text-xs font-semibold cursor-pointer"
           >
             Tutup
           </button>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import {
   Send,
   Upload,
   X,
   Loader2,
-  User,
   Eye,
   AlertCircle,
   MessageSquare,
@@ -16,9 +16,14 @@ import {
   Users,
   CircleDot,
   FileText,
+  User,
+  UserCheck,
+  Shield,
+  ArrowRight,
+  Info,
 } from "lucide-react";
-import { FormLaporanData, KategoriBullying, PeranPelapor } from "@/types";
-import { Profile } from "@/types";
+import { FormLaporanData, KategoriBullying, PeranPelapor, Profile } from "@/types";
+import { validateUploadedFile } from "@/lib/security";
 
 const KATEGORI_OPTIONS: {
   value: KategoriBullying;
@@ -41,8 +46,15 @@ interface Props {
 export default function FormLaporan({ user, onSuccess }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Mode Identitas: jika login bisa pilih "siswa" atau "anonim"
+  const [modeIdentitas, setModeIdentitas] = useState<"siswa" | "anonim">(
+    user ? "siswa" : "anonim"
+  );
 
   const [form, setForm] = useState<Partial<FormLaporanData>>({
     peran_pelapor: "korban",
@@ -54,8 +66,20 @@ export default function FormLaporan({ user, onSuccess }: Props) {
     setForm((f) => ({ ...f, [k]: v }));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     const files = Array.from(e.target.files ?? []);
-    const valid = files.filter((f) => f.size <= 5 * 1024 * 1024);
+    const valid: File[] = [];
+
+    for (const file of files) {
+      const check = validateUploadedFile(file);
+      if (!check.valid) {
+        setError(check.error || "Berkas tidak diizinkan.");
+        e.target.value = "";
+        return;
+      }
+      valid.push(file);
+    }
+
     setSelectedFiles((prev) => [...prev, ...valid].slice(0, 3));
     e.target.value = "";
   };
@@ -84,7 +108,12 @@ export default function FormLaporan({ user, onSuccess }: Props) {
     try {
       const { LaporanService } = await import("@/lib/data");
       const laporan = await LaporanService.create(
-        { ...form, bukti_files: selectedFiles } as FormLaporanData,
+        {
+          ...form,
+          mode_identitas: user ? modeIdentitas : "anonim",
+          bukti_files: selectedFiles,
+          _hp_trap: honeypot,
+        } as FormLaporanData,
         user
       );
       onSuccess(laporan.kode_pelacak);
@@ -96,14 +125,137 @@ export default function FormLaporan({ user, onSuccess }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Honeypot Bot Trap (Tidak terlihat manusia, jebakan otomatis untuk bot spam) */}
+      <div className="hidden" aria-hidden="true" style={{ display: "none" }}>
+        <label htmlFor="_hp_trap">Leave this empty</label>
+        <input
+          id="_hp_trap"
+          type="text"
+          name="_hp_trap"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+            {/* Header Form */}
+      {user ? (
+        <>
+          <div className="pb-3 border-b border-stone-100">
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900">
+              Pengaduan Bullying
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              Masuk sebagai <strong>{user.nama}</strong> ({user.nisn_kelas || "Siswa"}). Pilih cara melapor di bawah.
+            </p>
+          </div>
+
+          {/* Pilihan Identitas Pelapor (Jika Login Siswa) */}
+          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200">
+            <label className="form-label mb-2 block">Identitas Pelapor dalam Laporan Ini</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setModeIdentitas("siswa")}
+                className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                  modeIdentitas === "siswa"
+                    ? "border-amber-500 bg-white shadow-xs"
+                    : "border-stone-200 bg-amber-50/40 text-stone-500 hover:border-amber-300"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <UserCheck className={`w-4 h-4 ${modeIdentitas === "siswa" ? "text-amber-600" : "text-stone-400"}`} />
+                  <span className="font-bold text-xs sm:text-sm text-stone-900">Dengan Identitas Siswa</span>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-snug">
+                  Nama: <strong>{user.nama}</strong> ({user.nisn_kelas || "Siswa"}). Memudahkan Admin memberikan pendampingan langsung.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModeIdentitas("anonim")}
+                className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                  modeIdentitas === "anonim"
+                    ? "border-amber-500 bg-white shadow-xs"
+                    : "border-stone-200 bg-amber-50/40 text-stone-500 hover:border-amber-300"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield className={`w-4 h-4 ${modeIdentitas === "anonim" ? "text-amber-600" : "text-stone-400"}`} />
+                  <span className="font-bold text-xs sm:text-sm text-stone-900">Lapor sebagai Anonim</span>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-snug">
+                  Identitasmu disembunyikan sepenuhnya dari Admin, namun tetap tersimpan di riwayat akunmu.
+                </p>
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-4 pb-2 border-b border-stone-100">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+              Pengaduan Anonim
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              Identitasmu 100% dirahasiakan. Laporan akan langsung ditangani secara aman oleh Admin Sekolah.
+            </p>
+          </div>
+
+          {/* Opsi Akses: Melapor dengan Identitas & Lacak Tiket */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+            <Link
+              href="/login"
+              className="group flex items-center justify-between p-3 rounded-2xl bg-stone-50/80 hover:bg-amber-50/80 border border-stone-200/80 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-sm shadow-2xs group-hover:border-amber-400 group-hover:bg-amber-400 group-hover:text-stone-950 transition-colors shrink-0">
+                  👤
+                </div>
+                <div className="text-left">
+                  <div className="text-[11px] text-stone-400 font-medium leading-none mb-1">
+                    Melapor dengan nama resmi?
+                  </div>
+                  <div className="text-xs font-bold text-stone-800 group-hover:text-amber-900 leading-tight">
+                    Masuk Akun Siswa
+                  </div>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition-all shrink-0" />
+            </Link>
+
+            <Link
+              href="/status"
+              className="group flex items-center justify-between p-3 rounded-2xl bg-stone-50/80 hover:bg-amber-50/80 border border-stone-200/80 hover:border-amber-300 transition-all shadow-2xs cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-sm shadow-2xs group-hover:border-amber-400 group-hover:bg-amber-400 group-hover:text-stone-950 transition-colors shrink-0">
+                  🔍
+                </div>
+                <div className="text-left">
+                  <div className="text-[11px] text-stone-400 font-medium leading-none mb-1">
+                    Sudah punya kode tiket?
+                  </div>
+                  <div className="text-xs font-bold text-stone-800 group-hover:text-amber-900 leading-tight">
+                    Pantau Status Laporan
+                  </div>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-amber-800 group-hover:translate-x-0.5 transition-all shrink-0" />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Peran Pelapor */}
       <div>
-        <label className="form-label">Peran Pelapor</label>
+        <label className="form-label">Kamu Melapor Sebagai</label>
         <div className="grid grid-cols-2 gap-3">
           {(
             [
-              { id: "korban" as PeranPelapor, label: "Saya adalah Korban", icon: User },
+              { id: "korban" as PeranPelapor, label: "Saya adalah Korban", icon: ShieldAlert },
               { id: "saksi" as PeranPelapor, label: "Saya adalah Saksi", icon: Eye },
             ] as const
           ).map((item) => {
@@ -213,7 +365,7 @@ export default function FormLaporan({ user, onSuccess }: Props) {
         <textarea
           className="input resize-none"
           rows={5}
-          placeholder="Tuliskan apa yang terjadi secara jelas dan jujur. Informasi ini akan diperlakukan sangat rahasia oleh tim Guru BK."
+          placeholder="Tuliskan apa yang terjadi secara jelas dan jujur. Informasi ini akan diperlakukan sangat rahasia oleh tim Admin."
           required
           minLength={15}
           value={form.deskripsi ?? ""}
@@ -275,12 +427,12 @@ export default function FormLaporan({ user, onSuccess }: Props) {
       <div>
         <label className="form-label">
           Kontak Privat Pelapor{" "}
-          <span className="font-normal text-stone-400">(opsional — nomor WhatsApp bila ingin dihubungi privat oleh BK)</span>
+          <span className="font-normal text-stone-400">(opsional — nomor WhatsApp bila ingin dihubungi privat oleh Admin)</span>
         </label>
         <input
           className="input"
           type="text"
-          placeholder="Contoh: 0812-xxxx-xxxx (hanya terlihat oleh Guru BK)"
+          placeholder="Contoh: 0812-xxxx-xxxx (hanya terlihat oleh Admin)"
           value={form.kontak_opsional ?? ""}
           onChange={(e) => set("kontak_opsional", e.target.value as never)}
         />
@@ -310,10 +462,6 @@ export default function FormLaporan({ user, onSuccess }: Props) {
           </>
         )}
       </button>
-
-      <p className="text-center text-[11px] text-stone-400">
-        Laporan dikirim secara terenkripsi dan langsung diteruskan ke meja Guru BK.
-      </p>
     </form>
   );
 }

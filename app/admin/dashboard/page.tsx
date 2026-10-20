@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ShieldCheck,
+  BookOpen,
+  Plus,
   Search,
   Filter,
   LogOut,
@@ -16,7 +18,6 @@ import {
   Send,
   User,
   UserX,
-  ExternalLink,
   ChevronRight,
   X,
   Users,
@@ -25,7 +26,7 @@ import {
   KeyRound,
   Inbox,
 } from "lucide-react";
-import { AuthService, LaporanService, StudentService } from "@/lib/data";
+import { AuthService, LaporanService, StudentService, KelasService } from "@/lib/data";
 import { formatTanggal, formatTanggalWaktu } from "@/lib/utils";
 import { Laporan, Profile, StatusLaporan, StudentAccount } from "@/types";
 
@@ -49,6 +50,9 @@ export default function AdminDashboardPage() {
 
   // State Siswa
   const [students, setStudents] = useState<StudentAccount[]>([]);
+  const [kelasList, setKelasList] = useState<string[]>([]);
+  const [newKelasInput, setNewKelasInput] = useState("");
+  const [kelasMsg, setKelasMsg] = useState<string | null>(null);
   const [newSiswaNama, setNewSiswaNama] = useState("");
   const [newSiswaNisn, setNewSiswaNisn] = useState("");
   const [newSiswaKelas, setNewSiswaKelas] = useState("");
@@ -59,16 +63,40 @@ export default function AdminDashboardPage() {
   const loadData = () => {
     setLaporanList(LaporanService.getAll());
     setStudents(StudentService.getAll());
+    setKelasList(KelasService.getAll());
   };
 
   useEffect(() => {
-    const user = AuthService.getUser();
-    if (!user || user.role !== "admin") {
-      router.push("/admin/login");
-      return;
+    const checkSession = () => {
+      const user = AuthService.getUser();
+      if (!user || user.role !== "admin") {
+        router.push("/admin/login?expired=1");
+        return false;
+      }
+      setAdmin(user);
+      return true;
+    };
+
+    const isOk = checkSession();
+    if (isOk) {
+      loadData();
     }
-    setAdmin(user);
-    loadData();
+
+    // Pemantauan sesi aktif setiap 30 detik untuk keamanan real-time
+    const interval = setInterval(checkSession, 30000);
+
+    // Tangani jika sesi dihapus / logout dari tab lain
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "safereport_real_session" && !e.newValue) {
+        router.push("/admin/login");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, [router]);
 
   const handleLogout = () => {
@@ -98,6 +126,38 @@ export default function AdminDashboardPage() {
     const updated = LaporanService.getByKode(activeLaporan.kode_pelacak);
     if (updated) setActiveLaporan(updated);
     setIsSendingBalasan(false);
+  };
+
+  // Tambah Kelas Baru
+  const handleTambahKelas = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKelasInput.trim()) return;
+
+    const success = KelasService.add(newKelasInput);
+    if (!success) {
+      setKelasMsg(`Kelas "${newKelasInput.trim()}" sudah ada sebelumnya.`);
+      setTimeout(() => setKelasMsg(null), 3000);
+      return;
+    }
+
+    const added = newKelasInput.trim();
+    setKelasMsg(`Kelas "${added}" berhasil ditambahkan!`);
+    setNewKelasInput("");
+    loadData();
+    // Otomatis pilih kelas yang baru dibuat untuk kenyamanan
+    setNewSiswaKelas(added);
+    setTimeout(() => setKelasMsg(null), 3000);
+  };
+
+  // Hapus Kelas
+  const handleHapusKelas = (namaKelas: string) => {
+    if (confirm(`Hapus kelas "${namaKelas}" dari daftar pilihan kelas?`)) {
+      KelasService.delete(namaKelas);
+      if (newSiswaKelas === namaKelas) {
+        setNewSiswaKelas("");
+      }
+      loadData();
+    }
   };
 
   // Tambah akun siswa baru
@@ -167,22 +227,16 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <div className="text-sm font-black flex items-center gap-2">
-                SafeReport <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">PORTAL BK</span>
+                SafeReport <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">PORTAL ADMIN</span>
               </div>
               <div className="text-[11px] text-stone-400">
-                {admin.nama} • {admin.nisn_kelas || "Staf Guru BK"}
+                {admin.nama} • {admin.nisn_kelas || "Staf Admin"}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              target="_blank"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-stone-300 hover:text-amber-300 font-semibold transition-colors"
-            >
-              Lihat Halaman Pengaduan <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
+            
             <button
               onClick={handleLogout}
               className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-rose-900/50 hover:text-rose-300 text-stone-300 transition-colors cursor-pointer"
@@ -306,7 +360,7 @@ export default function AdminDashboardPage() {
                       <th className="py-3 px-4">Pelapor</th>
                       <th className="py-3 px-4">Pelaku / Lokasi</th>
                       <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Tindakan BK</th>
+                      <th className="py-3 px-4 text-right">Tindakan Admin</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100">
@@ -383,10 +437,82 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 2: KELOLA AKUN SISWA (Dibuat oleh Guru BK) */}
+        {/* TAB 2: KELOLA AKUN SISWA & DATA KELAS (Dibuat oleh Admin) */}
         {activeTab === "siswa" && (
           <div className="space-y-6">
-            {/* Form Tambah Siswa */}
+            {/* Bagian 1: Manajemen Data Kelas */}
+            <div className="card p-6 border border-amber-200/90 bg-gradient-to-br from-white via-amber-50/40 to-white shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-amber-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-400 text-stone-900 flex items-center justify-center font-bold">
+                    <BookOpen className="w-5 h-5 text-stone-900" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-stone-900">
+                      Kelola Data Kelas
+                    </h2>
+                    <p className="text-xs text-stone-500">
+                      Buat daftar kelas sekolahmu di sini. Kelas yang dibuat akan langsung muncul di pilihan pendaftaran siswa.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Form Tambah Kelas */}
+                <form onSubmit={handleTambahKelas} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nama kelas baru (misal: X RPL 1)"
+                    value={newKelasInput}
+                    onChange={(e) => setNewKelasInput(e.target.value)}
+                    className="input text-xs py-2 w-48 sm:w-56"
+                  />
+                  <button type="submit" className="btn-primary text-xs px-3.5 py-2 font-bold shrink-0 flex items-center gap-1">
+                    <Plus className="w-3.5 h-3.5" /> Tambah
+                  </button>
+                </form>
+              </div>
+
+              {kelasMsg && (
+                <div className="mb-3 p-2.5 rounded-xl bg-amber-100/70 border border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>{kelasMsg}</span>
+                </div>
+              )}
+
+              {/* Daftar Chips Kelas */}
+              <div>
+                <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-2">
+                  Daftar Kelas Tersedia ({kelasList.length}):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {kelasList.map((k) => (
+                    <div
+                      key={k}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-amber-200 text-xs font-bold text-stone-800 shadow-2xs hover:border-amber-400 transition-all group"
+                    >
+                      <span>{k}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleHapusKelas(k)}
+                        title={`Hapus kelas ${k}`}
+                        className="text-stone-300 hover:text-rose-500 transition-colors cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {kelasList.length === 0 && (
+                    <p className="text-xs text-stone-400 italic">
+                      Belum ada kelas yang dibuat. Silakan tambahkan kelas pertama pada input di atas.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bagian 2: Form Tambah Akun Siswa */}
             <div className="card p-6 border border-amber-200/90 bg-white">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-9 h-9 rounded-xl bg-amber-400 text-stone-900 flex items-center justify-center font-bold">
@@ -397,7 +523,7 @@ export default function AdminDashboardPage() {
                     Tambah Akun Siswa Baru
                   </h2>
                   <p className="text-xs text-stone-500">
-                    Siswa yang didaftarkan dapat masuk ke portal siswa menggunakan NISN dan PIN untuk melihat laporan akun mereka.
+                    Pilih kelas dari data yang sudah dibuat untuk mendaftarkan akun siswa baru.
                   </p>
                 </div>
               </div>
@@ -433,15 +559,20 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label text-xs">Kelas</label>
-                  <input
-                    type="text"
+                  <label className="form-label text-xs">Pilih Kelas</label>
+                  <select
                     required
-                    placeholder="Contoh: XI IPA 2"
                     value={newSiswaKelas}
                     onChange={(e) => setNewSiswaKelas(e.target.value)}
-                    className="input text-xs"
-                  />
+                    className="input text-xs font-semibold cursor-pointer"
+                  >
+                    <option value="">-- Pilih Kelas --</option>
+                    {kelasList.map((k) => (
+                      <option key={k} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="form-label text-xs">Kata Sandi / PIN Awal</label>
@@ -527,7 +658,7 @@ export default function AdminDashboardPage() {
         )}
       </main>
 
-      {/* Modal Detail & Manajemen Kasus BK */}
+      {/* Modal Detail & Manajemen Kasus Admin */}
       {activeLaporan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-stone-200 animate-pop-in">
@@ -650,10 +781,10 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Riwayat & Kirim Balasan BK */}
+              {/* Riwayat & Kirim Balasan Admin */}
               <div className="pt-3 border-t border-stone-100 space-y-3">
                 <label className="font-bold text-stone-800 block">
-                  Riwayat Balasan & Pendampingan Guru BK:
+                  Riwayat Balasan & Pendampingan Admin:
                 </label>
 
                 {activeLaporan.tindak_lanjut && activeLaporan.tindak_lanjut.length > 0 ? (
@@ -676,7 +807,7 @@ export default function AdminDashboardPage() {
                 <form onSubmit={handleKirimBalasan} className="space-y-2">
                   <textarea
                     rows={3}
-                    placeholder="Tulis balasan atau tindak lanjut dari Guru BK untuk pelapor (bisa dibaca siswa melalui kode tiket pelacak)..."
+                    placeholder="Tulis balasan atau tindak lanjut dari Admin untuk pelapor (bisa dibaca siswa melalui kode tiket pelacak)..."
                     value={balasanPesan}
                     onChange={(e) => setBalasanPesan(e.target.value)}
                     className="w-full p-3 rounded-2xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"

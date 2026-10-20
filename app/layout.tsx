@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SafeReport — Pengaduan Bullying Aman & Rahasia",
   description:
-    "Platform pelaporan perundungan (bullying) di sekolah & kelas. Privasi terjamin, anonim, transparan, dan ditangani oleh Guru BK.",
+    "Platform pelaporan perundungan (bullying) di sekolah & kelas. Privasi terjamin, anonim, transparan, dan ditangani oleh Admin.",
 };
 
 export default function RootLayout({

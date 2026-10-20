@@ -7,20 +7,20 @@
 
 ## 🎯 Panduan Lengkap Cara Memakai Aplikasi
 
-### 1. Masuk ke Portal Guru BK / Admin (Langkah Pertama)
-1. Buka browser dan kunjungi: **`http://localhost:3000/admin/login`** (atau klik menu **"Portal BK"** di pojok kanan atas).
+### 1. Masuk ke Portal Admin Sekolah (Langkah Pertama)
+1. Buka browser dan kunjungi: **`http://localhost:3000/admin/login`** (jalur akses langsung admin).
 2. Terdapat 2 opsi:
    - **Gunakan Akun Bawaan Awal:**
      - **Email:** `admin@sekolah.id`
      - **Kata Sandi:** `admin`
    - **Atau Buat Akun Admin Baru:**
-     - Klik tab **"Buat Akun Admin"**, isi Nama Guru BK (contoh: *Ibu Ratna, S.Pd*), Email, Jabatan, dan Kata Sandi, lalu klik **Daftarkan**.
-3. Klik **"Masuk Dashboard BK"**. Kamu sekarang berada di panel kendali Guru BK.
+     - Klik tab **"Buat Akun Admin"**, isi Nama Admin (contoh: *Ibu Ratna, S.Pd*), Email, Jabatan, dan Kata Sandi, lalu klik **Daftarkan**.
+3. Klik **"Masuk Dashboard Admin"**. Kamu sekarang berada di panel kendali Admin.
 
 ---
 
-### 2. Mendaftarkan Akun Siswa (Dibuat oleh Guru BK)
-1. Di Dashboard BK, klik tab **"Kelola Akun Siswa"**.
+### 2. Mendaftarkan Akun Siswa (Dibuat oleh Admin)
+1. Di Dashboard Admin, klik tab **"Kelola Akun Siswa"**.
 2. Pada formulir **"Tambah Akun Siswa Baru"**, masukkan:
    - **Nama Lengkap Siswa:** contoh *Budi Pratama*
    - **NISN:** contoh *007234901*
@@ -42,18 +42,18 @@ Aplikasi ini menerapkan prinsip **Zero-Friction Anonymous First**:
    - **Lokasi & Tanggal Kejadian:** tempat dan waktu kejadian.
    - **Kronologi:** ceritakan apa yang dialami/dilihat.
    - **Lampiran Bukti:** *(opsional, foto/tangkapan layar)*.
-   - **Kontak Privat:** *(opsional, no WhatsApp jika siswa ingin dihubungi privat oleh BK)*.
+   - **Kontak Privat:** *(opsional, no WhatsApp jika siswa ingin dihubungi privat oleh Admin)*.
 4. Klik **"Kirim Pengaduan Sekarang"**.
 5. Muncul popup **Modal Tiket Sukses** dengan **Kode Tiket Pelacak** (contoh: `SF-8K9P`).
 6. Siswa mengklik tombol **"Salin"** dan screenshot kode tersebut.
 
 ---
 
-### 4. Guru BK Meninjau & Menindaklanjuti Laporan
-1. Buka kembali **Dashboard BK** (`http://localhost:3000/admin/dashboard`).
+### 4. Admin Meninjau & Menindaklanjuti Laporan
+1. Buka kembali **Dashboard Admin** (`http://localhost:3000/admin/dashboard`).
 2. Di tab **"Daftar Pengaduan"**, laporan yang baru saja dikirim siswa akan langsung muncul dengan status **`baru`**.
 3. Klik tombol **"Kelola Kasus"** pada laporan tersebut.
-4. Guru BK dapat:
+4. Admin dapat:
    - Membaca detail kronologi, bukti foto, dan info pelaku.
    - Mengubah status penanganan: **`diverifikasi`** ➔ **`diproses`** ➔ **`selesai`**.
    - Mengetik pesan perkembangan kasus di kolom **"Tulis balasan atau tindak lanjut"** (contoh: *"Laporan sudah kami terima. Sedang dijadwalkan mediasi tertutup bersama wali kelas."*), lalu klik **"Kirim Balasan ke Siswa"**.
@@ -66,14 +66,14 @@ Aplikasi ini menerapkan prinsip **Zero-Friction Anonymous First**:
 3. Siswa dapat melihat:
    - Status terbaru penanganan kasusnya secara transparan.
    - Alur timeline proses penanganan.
-   - Pesan balasan resmi dari Guru BK.
+   - Pesan balasan resmi dari Admin.
 
 ---
 
-### 6. Opsi Masuk Siswa Terdaftar (Bila Siswa Memiliki Akun dari BK)
+### 6. Opsi Masuk Siswa Terdaftar (Bila Siswa Memiliki Akun dari Admin)
 - Jika siswa ingin melihat riwayat seluruh laporan yang pernah ia buat dengan akunnya:
   1. Masuk ke `http://localhost:3000/login`.
-  2. Masukkan **NISN** dan **PIN** yang telah dibuatkan Guru BK sebelumnya.
+  2. Masukkan **NISN** dan **PIN** yang telah dibuatkan Admin sebelumnya.
   3. Siswa akan masuk ke **Dashboard Siswa** (`/dashboard`) dan melihat daftar laporan akunnya.
 
 ---

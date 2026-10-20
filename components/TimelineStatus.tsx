@@ -6,14 +6,14 @@ const TIMELINE = [
     status: "baru" as StatusLaporan,
     icon: <Clock className="w-5 h-5" />,
     label: "Laporan Diterima",
-    desc: "Laporan sudah masuk ke sistem dan menunggu ditinjau oleh Guru BK.",
+    desc: "Laporan sudah masuk ke sistem dan menunggu ditinjau oleh Admin.",
     color: "rose",
   },
   {
     status: "diverifikasi" as StatusLaporan,
     icon: <Eye className="w-5 h-5" />,
     label: "Diverifikasi",
-    desc: "Guru BK sudah membaca dan memverifikasi laporan ini.",
+    desc: "Admin sudah membaca dan memverifikasi laporan ini.",
     color: "amber",
   },
   {

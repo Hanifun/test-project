@@ -18,7 +18,7 @@ export type KategoriBullying =
 // Status penanganan laporan
 export type StatusLaporan =
   | "baru"        // baru masuk, belum diproses
-  | "diverifikasi" // guru BK sudah baca dan verifikasi
+  | "diverifikasi" // admin sudah baca dan verifikasi
   | "diproses"    // sedang dalam proses mediasi/penanganan
   | "selesai";    // kasus sudah diselesaikan
 
@@ -35,7 +35,7 @@ export interface Profile {
   created_at: string;
 }
 
-// Data akun siswa (dibuat & dikelola oleh Guru BK di admin)
+// Data akun siswa (dibuat & dikelola oleh Admin)
 export interface StudentAccount {
   id: string;
   nisn: string;
@@ -45,7 +45,7 @@ export interface StudentAccount {
   created_at: string;
 }
 
-// Data akun admin / Guru BK
+// Data akun admin
 export interface AdminAccount {
   id: string;
   nama: string;
@@ -64,13 +64,13 @@ export interface BuktiFile {
   ukuran_byte?: number;
 }
 
-// Pesan balasan / tindak lanjut dari Guru BK
+// Pesan balasan / tindak lanjut dari Admin
 export interface TindakLanjut {
   id: string;
   laporan_id: string;
   pesan: string;
-  oleh_nama: string;  // nama Guru BK yang mengirim
-  is_publik: boolean; // kalau true, pelapor anonim bisa lihat di /status
+  oleh_nama: string;  // nama Admin yang mengirim
+  is_publik: boolean; // kalau true, pelapor bisa lihat di /status
   created_at: string;
 }
 
@@ -105,4 +105,15 @@ export interface FormLaporanData {
   deskripsi: string;
   kontak_opsional?: string;
   bukti_files?: File[];
+  mode_identitas?: "anonim" | "siswa"; // Mode identitas pelapor
+  _hp_trap?: string; // Honeypot field (anti-bot trap)
+}
+
+// Data sesi keamanan pengguna (dengan token, masa berlaku & tanda tangan integritas)
+export interface SessionData {
+  token: string;
+  user: Profile;
+  expiresAt: number;
+  createdAt: number;
+  signature: string;
 }
