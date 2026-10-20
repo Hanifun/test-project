@@ -230,7 +230,7 @@ export default function AdminDashboardPage() {
                 SafeReport <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">PORTAL ADMIN</span>
               </div>
               <div className="text-[11px] text-stone-400">
-                {admin.nama} • {admin.nisn_kelas || "Staf Admin"}
+                {(admin.nama || "Admin Sekolah").replace(/Guru\s*Bimbingan\s*Konseling/gi, "Admin Sekolah").replace(/Bimbingan\s*Konseling/gi, "Admin")} • {(admin.nisn_kelas || "Administrator Sekolah").replace(/Koordinator\s*Bimbingan\s*Konseling/gi, "Administrator Sekolah").replace(/Bimbingan\s*Konseling/gi, "Administrator Sekolah")}
               </div>
             </div>
           </div>

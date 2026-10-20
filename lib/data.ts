@@ -24,6 +24,17 @@ import {
 } from "@/types";
 import { generateKodePelacak } from "./utils";
 
+
+// Helper pembersih istilah Guru BK / Bimbingan Konseling agar seragam menjadi Admin
+export function cleanAdminText(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/Guru\s*Bimbingan\s*Konseling/gi, "Admin Sekolah")
+    .replace(/Koordinator\s*Bimbingan\s*Konseling/gi, "Administrator Sekolah")
+    .replace(/Bimbingan\s*Konseling/gi, "Admin")
+    .replace(/Guru\s*BK/gi, "Admin");
+}
+
 // Kunci penyimpanan LocalStorage
 const LAPORAN_STORAGE_KEY = "safereport_real_laporan";
 const ADMINS_STORAGE_KEY = "safereport_real_admins";
@@ -72,7 +83,31 @@ function writeStorage<T>(key: string, data: T): void {
 // =====================================================
 export const LaporanService = {
   getAll(): Laporan[] {
-    return readStorage<Laporan[]>(LAPORAN_STORAGE_KEY, []);
+    const list = readStorage<Laporan[]>(LAPORAN_STORAGE_KEY, []);
+    let changed = false;
+    const cleaned = list.map((l) => {
+      if (l.tindak_lanjut && l.tindak_lanjut.length > 0) {
+        let tlChanged = false;
+        const cleanTl = l.tindak_lanjut.map((t) => {
+          const newOleh = cleanAdminText(t.oleh_nama);
+          const newPesan = cleanAdminText(t.pesan);
+          if (newOleh !== t.oleh_nama || newPesan !== t.pesan) {
+            tlChanged = true;
+            return { ...t, oleh_nama: newOleh, pesan: newPesan };
+          }
+          return t;
+        });
+        if (tlChanged) {
+          changed = true;
+          return { ...l, tindak_lanjut: cleanTl };
+        }
+      }
+      return l;
+    });
+    if (changed) {
+      writeStorage(LAPORAN_STORAGE_KEY, cleaned);
+    }
+    return cleaned;
   },
 
   getByKode(kode: string): Laporan | null {
@@ -229,7 +264,21 @@ export const LaporanService = {
 // ==========================================
 export const AdminService = {
   getAll(): AdminAccount[] {
-    return readStorage<AdminAccount[]>(ADMINS_STORAGE_KEY, [DEFAULT_INITIAL_ADMIN]);
+    const list = readStorage<AdminAccount[]>(ADMINS_STORAGE_KEY, [DEFAULT_INITIAL_ADMIN]);
+    let changed = false;
+    const cleaned = list.map((a) => {
+      const newNama = cleanAdminText(a.nama);
+      const newJabatan = a.nip_jabatan ? cleanAdminText(a.nip_jabatan) : "Administrator Sekolah";
+      if (newNama !== a.nama || newJabatan !== a.nip_jabatan) {
+        changed = true;
+        return { ...a, nama: newNama, nip_jabatan: newJabatan };
+      }
+      return a;
+    });
+    if (changed) {
+      writeStorage(ADMINS_STORAGE_KEY, cleaned);
+    }
+    return cleaned;
   },
 
   create(admin: Omit<AdminAccount, "id" | "created_at">): AdminAccount {
@@ -358,7 +407,17 @@ export const AuthService = {
         }
       }
 
-      return session.user;
+      // Otomatis migrasikan jika sesi pengguna masih menyimpan teks lama "Bimbingan Konseling"
+      const user = session.user;
+      const cleanNama = cleanAdminText(user.nama);
+      const cleanNisn = user.nisn_kelas ? cleanAdminText(user.nisn_kelas) : user.nisn_kelas;
+      if (cleanNama !== user.nama || cleanNisn !== user.nisn_kelas) {
+        user.nama = cleanNama;
+        user.nisn_kelas = cleanNisn;
+        this.setUser(user);
+      }
+
+      return user;
     } catch {
       this.logout();
       return null;
