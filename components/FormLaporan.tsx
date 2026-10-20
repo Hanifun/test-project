@@ -44,10 +44,12 @@ const KATEGORI_OPTIONS: {
 
 interface Props {
   user: Profile | null;
+  initialMode?: "anonim" | "siswa";
+  onBackToMenu?: () => void;
   onSuccess: (kode: string) => void;
 }
 
-export default function FormLaporan({ user, onSuccess }: Props) {
+export default function FormLaporan({ user, initialMode, onBackToMenu, onSuccess }: Props) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +58,9 @@ export default function FormLaporan({ user, onSuccess }: Props) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Mode Identitas: jika login bisa pilih "siswa" atau "anonim"
+  // Mode Identitas: prioritaskan initialMode bila ada, atau siswa jika login, atau anonim
   const [modeIdentitas, setModeIdentitas] = useState<"siswa" | "anonim">(
-    user ? "siswa" : "anonim"
+    initialMode || (user ? "siswa" : "anonim")
   );
 
   const [form, setForm] = useState<Partial<FormLaporanData>>({
@@ -145,9 +147,18 @@ export default function FormLaporan({ user, onSuccess }: Props) {
           onChange={(e) => setHoneypot(e.target.value)}
         />
       </div>
-            {/* SafeReport Brand Logo Standar Web */}
-      <div className="pb-4 border-b border-stone-100">
+            {/* Brand Logo & Tombol Kembali ke Menu Pilihan */}
+      <div className="pb-4 border-b border-stone-100 flex items-center justify-between flex-wrap gap-2">
         <Logo size="md" showTagline={true} href="/" />
+        {onBackToMenu && (
+          <button
+            type="button"
+            onClick={onBackToMenu}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-stone-600 hover:text-amber-800 hover:bg-amber-100/60 border border-stone-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-amber-600" /> Kembali ke Pilihan Menu
+          </button>
+        )}
       </div>
 
       {/* Header Form */}
