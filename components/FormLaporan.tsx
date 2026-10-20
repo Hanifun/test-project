@@ -21,6 +21,7 @@ import {
   Shield,
   ShieldCheck,
   ArrowRight,
+  ArrowLeft,
   Info,
 } from "lucide-react";
 import { FormLaporanData, KategoriBullying, PeranPelapor, Profile } from "@/types";
@@ -152,13 +153,21 @@ export default function FormLaporan({ user, onSuccess }: Props) {
       {/* Header Form */}
       {user ? (
         <>
-          <div className="pb-3 border-b border-stone-100">
-            <h1 className="text-xl sm:text-2xl font-black text-stone-900">
-              Pengaduan Bullying
-            </h1>
-            <p className="text-xs sm:text-sm text-stone-500 mt-1">
-              Masuk sebagai <strong>{user.nama}</strong> ({user.nisn_kelas || "Siswa"}). Pilih cara melapor di bawah.
-            </p>
+          <div className="pb-3 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-stone-900">
+                Pengaduan Bullying
+              </h1>
+              <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                Masuk sebagai <strong>{user.nama}</strong> ({user.nisn_kelas || "Siswa"}). Pilih cara melapor di bawah.
+              </p>
+            </div>
+            <Link
+              href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold border border-amber-300 transition-colors w-fit shrink-0 cursor-pointer shadow-2xs"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Kembali ke Dashboard
+            </Link>
           </div>
 
           {/* Pilihan Identitas Pelapor (Jika Login Siswa) */}
