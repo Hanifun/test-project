@@ -20,9 +20,11 @@ import TimelineStatus from "@/components/TimelineStatus";
 import { AuthService, LaporanService } from "@/lib/data";
 import { formatTanggal, formatTanggalWaktu } from "@/lib/utils";
 import { Laporan, Profile } from "@/types";
+import { useToast } from "@/components/ToastProvider";
 
 function StatusContent() {
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const kodeParam = searchParams.get("kode") || "";
 
   const [user, setUser] = useState<Profile | null>(null);
@@ -47,10 +49,18 @@ function StatusContent() {
 
   const handleSearch = (overrideKode?: string) => {
     const target = (overrideKode || inputKode).trim().toUpperCase();
-    if (!target) return;
+    if (!target) {
+      toast("Masukkan kode tiket pelacak terlebih dahulu (contoh: SF-ABC1234).", "warning");
+      return;
+    }
     const res = LaporanService.getByKode(target);
     setLaporan(res);
     setSearched(true);
+    if (!res) {
+      toast("Kode tiket tidak ditemukan. Pastikan kode tiket ditulis dengan benar.", "error");
+    } else {
+      toast("Data laporan pengaduan berhasil ditemukan.", "success");
+    }
   };
 
   if (isCheckingAuth) {

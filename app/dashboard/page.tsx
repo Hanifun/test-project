@@ -19,9 +19,11 @@ import Footer from "@/components/Footer";
 import { AuthService, LaporanService } from "@/lib/data";
 import { formatTanggal } from "@/lib/utils";
 import { Laporan, Profile } from "@/types";
+import { useToast } from "@/components/ToastProvider";
 
 export default function StudentDashboardPage() {
   const router = useRouter();
+  const { toast, confirmModal } = useToast();
   const [user, setUser] = useState<Profile | null>(null);
   const [laporanList, setLaporanList] = useState<Laporan[]>([]);
   const [searchKode, setSearchKode] = useState("");
@@ -62,9 +64,20 @@ export default function StudentDashboardPage() {
     };
   }, [router]);
 
-  const handleLogout = () => {
-    AuthService.logout();
-    router.push("/");
+  const handleLogout = async () => {
+    const ok = await confirmModal({
+      title: "Konfirmasi Keluar",
+      message: "Apakah Anda yakin ingin keluar dari akun siswa?",
+      confirmText: "Ya, Keluar",
+      cancelText: "Batal",
+      destructive: true,
+    });
+
+    if (ok) {
+      AuthService.logout();
+      toast("Anda berhasil keluar dari akun siswa.", "info");
+      router.push("/");
+    }
   };
 
   const handleCariKode = (e: React.FormEvent) => {

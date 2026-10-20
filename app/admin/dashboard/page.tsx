@@ -29,9 +29,12 @@ import {
 import { AuthService, LaporanService, StudentService, KelasService } from "@/lib/data";
 import { formatTanggal, formatTanggalWaktu } from "@/lib/utils";
 import { Laporan, Profile, StatusLaporan, StudentAccount } from "@/types";
+import Logo from "@/components/Logo";
+import { useToast } from "@/components/ToastProvider";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const { toast, confirmModal } = useToast();
   const [admin, setAdmin] = useState<Profile | null>(null);
 
   // Navigasi Tab Admin
@@ -118,6 +121,7 @@ export default function AdminDashboardPage() {
     if (activeLaporan && activeLaporan.id === id) {
       setActiveLaporan({ ...activeLaporan, status: newStatus });
     }
+    toast(`Status laporan berhasil diubah ke "${newStatus.toUpperCase()}".`, "success");
   };
 
   // Tambah balasan tindak lanjut
@@ -133,6 +137,7 @@ export default function AdminDashboardPage() {
     const updated = LaporanService.getByKode(activeLaporan.kode_pelacak);
     if (updated) setActiveLaporan(updated);
     setIsSendingBalasan(false);
+    toast("Balasan tindak lanjut berhasil dikirim ke pelapor.", "success");
   };
 
   // Tambah Kelas Baru
@@ -149,21 +154,30 @@ export default function AdminDashboardPage() {
 
     const added = newKelasInput.trim();
     setKelasMsg(`Kelas "${added}" berhasil ditambahkan!`);
+    toast(`Kelas "${added}" berhasil ditambahkan!`, "success");
     setNewKelasInput("");
     loadData();
-    // Otomatis pilih kelas yang baru dibuat untuk kenyamanan
     setNewSiswaKelas(added);
     setTimeout(() => setKelasMsg(null), 3000);
   };
 
-  // Hapus Kelas
-  const handleHapusKelas = (namaKelas: string) => {
-    if (confirm(`Hapus kelas "${namaKelas}" dari daftar pilihan kelas?`)) {
+  // Hapus Kelas dengan modal konfirmasi pop-up
+  const handleHapusKelas = async (namaKelas: string) => {
+    const ok = await confirmModal({
+      title: "Hapus Pilihan Kelas",
+      message: `Hapus kelas "${namaKelas}" dari daftar pilihan kelas?`,
+      confirmText: "Hapus Kelas",
+      cancelText: "Batal",
+      destructive: true,
+    });
+
+    if (ok) {
       KelasService.delete(namaKelas);
       if (newSiswaKelas === namaKelas) {
         setNewSiswaKelas("");
       }
       loadData();
+      toast(`Kelas "${namaKelas}" berhasil dihapus.`, "success");
     }
   };
 
@@ -180,6 +194,7 @@ export default function AdminDashboardPage() {
     });
 
     setSiswaMsg(`Siswa "${newSiswaNama}" (NISN: ${newSiswaNisn}) berhasil didaftarkan!`);
+    toast(`Siswa "${newSiswaNama}" berhasil didaftarkan!`, "success");
     setNewSiswaNama("");
     setNewSiswaNisn("");
     setNewSiswaKelas("");
@@ -189,11 +204,56 @@ export default function AdminDashboardPage() {
     setTimeout(() => setSiswaMsg(null), 4000);
   };
 
-  // Hapus akun siswa
-  const handleHapusSiswa = (id: string, nama: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus akun siswa "${nama}"?`)) {
+  // Hapus semua data pengaduan dengan dialog modal pop-up standar web
+  const handleClearAllLaporan = async () => {
+    const ok = await confirmModal({
+      title: "Hapus Semua Pengaduan",
+      message: "Apakah Anda yakin ingin membersihkan seluruh data pengaduan? Semua catatan dan berkas bukti akan terhapus secara permanen.",
+      confirmText: "Ya, Hapus Semua",
+      cancelText: "Batal",
+      destructive: true,
+    });
+
+    if (ok) {
+      LaporanService.clearAll();
+      loadData();
+      setActiveLaporan(null);
+      toast("Seluruh data pengaduan berhasil dibersihkan.", "success");
+    }
+  };
+
+  // Hapus satu aduan spesifik dengan dialog modal pop-up
+  const handleHapusLaporan = async (id: string, kode: string) => {
+    const ok = await confirmModal({
+      title: "Hapus Pengaduan Ini",
+      message: `Hapus laporan pengaduan dengan kode tiket ${kode} secara permanen dari sistem? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: "Hapus Laporan",
+      cancelText: "Batal",
+      destructive: true,
+    });
+
+    if (ok) {
+      LaporanService.delete(id);
+      loadData();
+      setActiveLaporan(null);
+      toast(`Laporan ${kode} berhasil dihapus.`, "success");
+    }
+  };
+
+  // Hapus akun siswa dengan dialog modal pop-up
+  const handleHapusSiswa = async (id: string, nama: string) => {
+    const ok = await confirmModal({
+      title: "Hapus Akun Siswa",
+      message: `Hapus akun siswa "${nama}"? Siswa tidak akan dapat masuk ke dashboard lagi.`,
+      confirmText: "Hapus Akun",
+      cancelText: "Batal",
+      destructive: true,
+    });
+
+    if (ok) {
       StudentService.delete(id);
       loadData();
+      toast(`Akun siswa ${nama} berhasil dihapus.`, "success");
     }
   };
 
@@ -229,44 +289,19 @@ export default function AdminDashboardPage() {
       <header className="bg-stone-900 text-white px-4 py-3 sticky top-0 z-30 shadow-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-400 text-stone-950 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-5 h-5 text-stone-950" />
-            </div>
-            <div>
-              <div className="text-sm font-black flex items-center gap-2">
-                SafeReport <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">PORTAL ADMIN</span>
-              </div>
-              <div className="text-[11px] text-stone-400">
-                {(admin.nama || "Admin Sekolah").replace(/Guru\s*Bimbingan\s*Konseling/gi, "Admin Sekolah").replace(/Bimbingan\s*Konseling/gi, "Admin")} • {(admin.nisn_kelas || "Administrator Sekolah").replace(/Koordinator\s*Bimbingan\s*Konseling/gi, "Administrator Sekolah").replace(/Bimbingan\s*Konseling/gi, "Administrator Sekolah")}
-              </div>
-            </div>
+            <Logo size="sm" showTagline={false} dark={true} href="/" />
+            <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full font-bold border border-amber-400/30">
+              PORTAL ADMIN
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
-            {!showLogoutConfirm ? (
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-rose-900/50 hover:text-rose-300 text-stone-300 transition-colors cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" /> Keluar
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-950/60 border border-rose-800">
-                <span className="text-[11px] text-rose-300 font-semibold">Yakin keluar?</span>
-                <button
-                  onClick={confirmLogout}
-                  className="text-[11px] font-black text-white bg-rose-600 hover:bg-rose-500 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  Ya
-                </button>
-                <button
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="text-[11px] font-bold text-stone-400 hover:text-stone-200 transition-colors cursor-pointer"
-                >
-                  Batal
-                </button>
-              </div>
-            )}
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-rose-600 hover:text-white text-stone-300 transition-all cursor-pointer shadow-xs"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Keluar
+            </button>
           </div>
         </div>
       </header>
@@ -369,10 +404,19 @@ export default function AdminDashboardPage() {
 
             {/* Tabel Laporan Pengaduan */}
             <div className="card overflow-hidden">
-              <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+              <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between flex-wrap gap-2">
                 <h2 className="font-extrabold text-stone-800 text-sm sm:text-base">
                   Daftar Masuk Pengaduan ({filteredList.length})
                 </h2>
+                {laporanList.length > 0 && (
+                  <button
+                    onClick={handleClearAllLaporan}
+                    className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    title="Hapus seluruh data laporan pengaduan"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Hapus Semua Pengaduan
+                  </button>
+                )}
               </div>
 
               <div className="overflow-x-auto">
@@ -850,7 +894,15 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3 bg-stone-50 border-t border-stone-100 flex justify-end">
+            <div className="px-6 py-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => handleHapusLaporan(activeLaporan.id, activeLaporan.kode_pelacak)}
+                className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-2 rounded-xl border border-rose-200 font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Hapus aduan ini secara permanen"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Hapus Aduan Ini
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveLaporan(null)}

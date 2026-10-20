@@ -55,6 +55,15 @@ const DEFAULT_INITIAL_ADMIN: AdminAccount = {
 // Helper Storage Functions
 // =====================================================
 
+// Pembersihan otomatis seluruh pengaduan lama sesuai permintaan reset
+if (typeof window !== "undefined") {
+  const CLEAR_FLAG = "safereport_data_cleared_v3";
+  if (!localStorage.getItem(CLEAR_FLAG)) {
+    localStorage.removeItem(LAPORAN_STORAGE_KEY);
+    localStorage.setItem(CLEAR_FLAG, "true");
+  }
+}
+
 function readStorage<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
   try {
@@ -248,6 +257,14 @@ export const LaporanService = {
     list[idx].updated_at = new Date().toISOString();
     writeStorage(LAPORAN_STORAGE_KEY, list);
     return tl;
+  },
+
+  clearAll(): void {
+    writeStorage(LAPORAN_STORAGE_KEY, []);
+  },
+
+  deleteAll(): void {
+    writeStorage(LAPORAN_STORAGE_KEY, []);
   },
 
   delete(id: string): boolean {

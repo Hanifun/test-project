@@ -14,9 +14,12 @@ import {
 } from "lucide-react";
 import { AdminService, AuthService } from "@/lib/data";
 import { RateLimiter, sanitizeInput } from "@/lib/security";
+import Logo from "@/components/Logo";
+import { useToast } from "@/components/ToastProvider";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
 
   // State Form Login (Default kosong, tidak menampilkan kredensial)
   const [loginEmail, setLoginEmail] = useState("");
@@ -93,6 +96,7 @@ export default function AdminLoginPage() {
       if (!admin) {
         RateLimiter.record("admin_login_attempt");
         setLoginError("Email atau kata sandi tidak cocok. Silakan periksa kembali.");
+      toast("Email atau kata sandi admin tidak cocok.", "error");
         setIsLoading(false);
         return;
       }
@@ -107,6 +111,7 @@ export default function AdminLoginPage() {
         created_at: admin.created_at,
       });
 
+      toast("Login berhasil! Selamat datang di Portal Admin.", "success");
       router.push("/admin/dashboard");
     } catch {
       setLoginError("Terjadi kendala saat memproses login. Silakan coba kembali.");

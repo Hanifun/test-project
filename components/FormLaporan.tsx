@@ -19,10 +19,13 @@ import {
   User,
   UserCheck,
   Shield,
+  ShieldCheck,
   ArrowRight,
   Info,
 } from "lucide-react";
 import { FormLaporanData, KategoriBullying, PeranPelapor, Profile } from "@/types";
+import Logo from "@/components/Logo";
+import { useToast } from "@/components/ToastProvider";
 import { validateUploadedFile } from "@/lib/security";
 
 const KATEGORI_OPTIONS: {
@@ -44,6 +47,7 @@ interface Props {
 }
 
 export default function FormLaporan({ user, onSuccess }: Props) {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
@@ -73,7 +77,7 @@ export default function FormLaporan({ user, onSuccess }: Props) {
     for (const file of files) {
       const check = validateUploadedFile(file);
       if (!check.valid) {
-        setError(check.error || "Berkas tidak diizinkan.");
+        toast(check.error || "Berkas lampiran tidak diizinkan.", "error");
         e.target.value = "";
         return;
       }
@@ -91,16 +95,16 @@ export default function FormLaporan({ user, onSuccess }: Props) {
     e.preventDefault();
     setError(null);
 
-    if (!form.lokasi?.trim()) {
-      setError("Lokasi kejadian wajib diisi.");
+    if (!form.lokasi?.trim() || form.lokasi.trim().length < 3) {
+      toast("Mohon cantumkan lokasi kejadian secara jelas (minimal 3 karakter).", "warning");
       return;
     }
     if (!form.tanggal_kejadian) {
-      setError("Tanggal kejadian wajib diisi.");
+      toast("Tanggal kejadian wajib diisi.", "warning");
       return;
     }
     if (!form.deskripsi?.trim() || form.deskripsi.trim().length < 15) {
-      setError("Mohon ceritakan kronologi kejadian secara ringkas dan jelas (minimal 15 karakter).");
+      toast("Mohon ceritakan kronologi kejadian secara ringkas dan jelas (minimal 15 karakter).", "warning");
       return;
     }
 
@@ -117,8 +121,9 @@ export default function FormLaporan({ user, onSuccess }: Props) {
         user
       );
       onSuccess(laporan.kode_pelacak);
+      toast("Laporan pengaduan berhasil dikirim secara aman!", "success");
     } catch {
-      setError("Gagal mengirim laporan. Silakan coba sesaat lagi.");
+      toast("Gagal mengirim laporan. Silakan coba sesaat lagi.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +144,12 @@ export default function FormLaporan({ user, onSuccess }: Props) {
           onChange={(e) => setHoneypot(e.target.value)}
         />
       </div>
-            {/* Header Form */}
+            {/* SafeReport Brand Logo Standar Web */}
+      <div className="pb-4 border-b border-stone-100">
+        <Logo size="md" showTagline={true} href="/" />
+      </div>
+
+      {/* Header Form */}
       {user ? (
         <>
           <div className="pb-3 border-b border-stone-100">

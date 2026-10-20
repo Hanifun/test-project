@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ToastProvider } from "@/components/ToastProvider";
 
 export const metadata: Metadata = {
   title: "SafeReport — Pengaduan Bullying Aman & Rahasia",
@@ -14,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      <body className="min-h-screen bg-amber-50">{children}</body>
+      <body className="min-h-screen bg-amber-50">
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }
